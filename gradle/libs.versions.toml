@@ -12,8 +12,8 @@ vigilance = "314"
 universalcraft = "494"
 
 # Kotlin
-kotlin = "2.3.10"
-ksp = "2.3.8"
+kotlin = "2.4.0"
+ksp = "2.3.9"
 
 [libraries]
 elementa = { module = "gg.essential:elementa", version.ref = "elementa" }

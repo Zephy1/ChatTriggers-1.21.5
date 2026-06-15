@@ -2,6 +2,7 @@ import org.gradle.kotlin.dsl.support.unzipTo
 import org.jetbrains.dokka.versioning.VersioningConfiguration
 import org.jetbrains.dokka.versioning.VersioningPlugin
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.net.HttpURLConnection
 import java.net.URI
 
@@ -101,17 +102,6 @@ tasks {
         }
     }
 
-    withType<JavaCompile>().configureEach {
-        options.release.set(21)
-    }
-
-    kotlin {
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_21)
-            freeCompilerArgs = listOf("-Xcontext-receivers")
-        }
-    }
-
     jar {
         from("LICENSE") {
             rename { "${name}_${base.archivesName.get()}" }
@@ -142,8 +132,6 @@ tasks {
         val branch = getBranch()
         dokkaSourceSets {
             configureEach {
-                jdkVersion.set(21)
-
                 perPackageOption {
                     matchingRegex.set("com\\.chattriggers\\.ctjs\\.internal(\$|\\.).*")
                     suppress.set(true)

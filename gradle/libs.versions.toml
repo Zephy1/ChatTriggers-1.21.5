@@ -1,15 +1,15 @@
 [versions]
 mapping-io = "0.8.0"
 #rhino = "7c7c509668"
-jackson-core = "2.21.3"
-textarea = "3.6.2"
+jackson-core = "2.20.0"
+textarea = "3.6.3"
 serialization = "1.11.0"
 koffee = "315bc11234"
 devauth = "1.2.1"
 dokka = "1.9.20"
-elementa = "743"
+elementa = "745"
 vigilance = "314"
-universalcraft = "494"
+universalcraft = "505"
 
 # Kotlin
 kotlin = "2.4.0"

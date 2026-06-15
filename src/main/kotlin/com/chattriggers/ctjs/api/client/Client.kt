@@ -8,22 +8,17 @@ import com.chattriggers.ctjs.internal.mixins.ChatScreenAccessor
 import com.chattriggers.ctjs.internal.mixins.HandledScreenAccessor
 import com.chattriggers.ctjs.internal.mixins.KeyBindingAccessor
 import com.chattriggers.ctjs.internal.utils.asMixin
+import com.mojang.realmsclient.RealmsMainScreen
 import gg.essential.universal.UKeyboard
-import net.minecraft.client.MinecraftClient
-import net.minecraft.client.gui.hud.ChatHud
-import net.minecraft.client.gui.hud.PlayerListHud
-import net.minecraft.client.gui.screen.ChatScreen
-import net.minecraft.client.gui.screen.Screen
-import net.minecraft.client.gui.screen.TitleScreen
-import net.minecraft.client.gui.screen.ingame.HandledScreen
-import net.minecraft.client.gui.screen.multiplayer.ConnectScreen
-import net.minecraft.client.gui.screen.multiplayer.MultiplayerScreen
-import net.minecraft.client.network.ClientPlayNetworkHandler
-import net.minecraft.client.network.ServerAddress
-import net.minecraft.client.network.ServerInfo
-import net.minecraft.client.option.KeyBinding
-import net.minecraft.client.realms.gui.screen.RealmsMainScreen
-import net.minecraft.network.packet.Packet
+import net.minecraft.client.Minecraft
+import net.minecraft.client.gui.components.ChatComponent
+import net.minecraft.client.gui.screens.ChatScreen
+import net.minecraft.client.gui.screens.ConnectScreen
+import net.minecraft.client.gui.screens.TitleScreen
+import net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen
+import net.minecraft.client.multiplayer.ClientPacketListener
+import net.minecraft.client.multiplayer.ServerData
+import net.minecraft.client.multiplayer.resolver.ServerAddress
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -49,7 +44,7 @@ object Client {
      * @return The Minecraft object
      */
     @JvmStatic
-    fun getMinecraft(): MinecraftClient = MinecraftClient.getInstance()
+    fun getMinecraft(): Minecraft = Minecraft.getInstance()
 
     /**
      * Gets Minecraft's NetHandlerPlayClient object
@@ -57,7 +52,7 @@ object Client {
      * @return The NetHandlerPlayClient object
      */
     @JvmStatic
-    fun getConnection(): ClientPlayNetworkHandler? = getMinecraft().networkHandler
+    fun getConnection(): ClientPacketListener? = getMinecraft().connection
 
     /**
      * Schedule's a task to run on Minecraft's main thread in [delay] ticks.
@@ -74,7 +69,7 @@ object Client {
     //#if MC>=12110
     fun <T> synchronizedTask(task: () -> T): T {
         val mc = getMinecraft()
-        if (mc.isOnThread) {
+        if (mc.isSameThread) {
             return task()
         }
 
@@ -110,9 +105,9 @@ object Client {
 
             getMinecraft().setScreen(
                 when {
-                    getMinecraft().isInSingleplayer -> TitleScreen()
-                    getMinecraft().currentServerEntry?.isRealm == true -> RealmsMainScreen(TitleScreen())
-                    else -> MultiplayerScreen(TitleScreen())
+                    getMinecraft().isLocalServer -> TitleScreen()
+                    getMinecraft().getCurrentServer?.isRealm == true -> RealmsMainScreen(TitleScreen())
+                    else -> JoinMultiplayerScreen(TitleScreen())
                 },
             )
         }
@@ -127,10 +122,10 @@ object Client {
     fun connect(ip: String, port: Int = 25565) {
         scheduleTask {
             ConnectScreen.connect(
-                MultiplayerScreen(TitleScreen()),
+                JoinMultiplayerScreen(TitleScreen()),
                 getMinecraft(),
                 ServerAddress(ip, port),
-                ServerInfo("Server", ip, ServerInfo.ServerType.OTHER),
+                ServerData("Server", ip, ServerData.Type.OTHER),
                 false,
                 null,
             )
@@ -143,7 +138,7 @@ object Client {
      * @return The GuiNewChat object for the chat gui
      */
     @JvmStatic
-    fun getChatGui(): ChatHud? = getMinecraft().inGameHud?.chatHud
+    fun getChatGui(): ChatComponent? = getMinecraft().inGameHud?.chatHud
 
     @JvmStatic
     fun isInChat(): Boolean = getMinecraft().currentScreen is ChatScreen

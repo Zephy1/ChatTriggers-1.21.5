@@ -21,7 +21,7 @@ object Scoreboard {
     private var scoreboardNames = mutableListOf<Score>()
     private var scoreboardTitle = TextComponent("")
     private var shouldRender = true
-    internal var customTitle = false
+    var customTitle = false
 
     @JvmStatic
     fun toMC() = World.toMC()?.scoreboard
@@ -228,7 +228,7 @@ object Scoreboard {
         needsUpdate = true
     }
 
-    internal fun clearCustom() {
+    fun clearCustom() {
         scoreboardNames.clear()
         customTitle = false
         scoreboardTitle = TextComponent("")

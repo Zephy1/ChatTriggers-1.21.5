@@ -25,7 +25,7 @@ public class ChatHudMixin {
         )
     )
     private void injectClear(boolean clearHistory, CallbackInfo ci) {
-        ChatLib.INSTANCE.onChatHudClearChat$ctjs();
+        ChatLib.INSTANCE.onChatHudClearChat();
     }
 
     // TODO: is it this or addVisibleMessage
@@ -42,7 +42,7 @@ public class ChatHudMixin {
         )
     )
     private void injectMessageRemovedForChatLimit(ChatHudLine message, CallbackInfo ci) {
-        ChatLib.INSTANCE.onChatHudLineRemoved$ctjs(messages.getLast());
+        ChatLib.INSTANCE.onChatHudLineRemoved(messages.getLast());
     }
 
     // Note: ChatHudLine objects are also removed in queueForRemoval, however those are signature based.

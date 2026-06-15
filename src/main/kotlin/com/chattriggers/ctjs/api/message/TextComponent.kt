@@ -241,7 +241,7 @@ class TextComponent private constructor(
 
     override fun toString() = formattedText
 
-    internal fun toMutableText() = Text.empty().apply {
+    fun toMutableText() = Text.empty().apply {
         parts.forEach(::append)
     }
 

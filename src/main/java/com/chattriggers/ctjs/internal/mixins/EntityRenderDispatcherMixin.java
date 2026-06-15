@@ -36,7 +36,7 @@ public abstract class EntityRenderDispatcherMixin {
         )
     )
     private void injectReload(ResourceManager manager, CallbackInfo ci, @Local EntityRendererFactory.Context context) {
-        GUIRenderer.initializePlayerRenderers$ctjs(context);
+        GUIRenderer.initializePlayerRenderers(context);
     }
 
     @Inject(

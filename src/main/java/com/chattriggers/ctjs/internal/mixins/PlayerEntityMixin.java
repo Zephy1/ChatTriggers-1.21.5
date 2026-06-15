@@ -34,7 +34,7 @@ public abstract class PlayerEntityMixin extends LivingEntity implements NameTagO
         )
     )
     private MutableText injectGetName(MutableText original) {
-        if (overriddenNametagName != null) return overriddenNametagName.toMutableText$ctjs();
+        if (overriddenNametagName != null) return overriddenNametagName.toMutableText();
         return original;
     }
 

@@ -433,11 +433,11 @@ object ChatLib {
         chatLineIds[newChatLine] = message.getChatLineId()
     }
 
-    internal fun onChatHudClearChat() {
+    fun onChatHudClearChat() {
         chatLineIds.clear()
     }
 
-    internal fun onChatHudLineRemoved(line: ChatHudLine) {
+    fun onChatHudLineRemoved(line: ChatHudLine) {
         chatLineIds.remove(line)
     }
 }

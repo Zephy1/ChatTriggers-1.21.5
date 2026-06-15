@@ -46,8 +46,8 @@ public abstract class MinecraftClientMixin {
 
         if (this.world != null) {
             TriggerType.WORLD_UNLOAD.triggerAll();
-            Scoreboard.INSTANCE.clearCustom$ctjs();
-            TabList.INSTANCE.clearCustom$ctjs();
+            Scoreboard.INSTANCE.clearCustom();
+            TabList.INSTANCE.clearCustom();
         }
     }
 
@@ -87,8 +87,8 @@ public abstract class MinecraftClientMixin {
         if (this.isIntegratedServerRunning() || this.getCurrentServerEntry() != null) {
             TriggerType.WORLD_UNLOAD.triggerAll();
             TriggerType.SERVER_DISCONNECT.triggerAll();
-            Scoreboard.INSTANCE.clearCustom$ctjs();
-            TabList.INSTANCE.clearCustom$ctjs();
+            Scoreboard.INSTANCE.clearCustom();
+            TabList.INSTANCE.clearCustom();
         }
     }
 

@@ -45,7 +45,7 @@ object GUIRenderer {
         internal set
 
     @JvmStatic
-    internal fun initializePlayerRenderers(context: EntityRendererFactory.Context) {
+    fun initializePlayerRenderers(context: EntityRendererFactory.Context) {
         normalCTRenderPlayer = CTPlayerRenderer(context, slim = false)
         slimCTRenderPlayer = CTPlayerRenderer(context, slim = true)
     }

@@ -33,8 +33,8 @@ object TabList {
     private var needsUpdate = true
     private var tabListNames = mutableListOf<Name>()
     private val playerComparator = Ordering.from(PlayerComparator())
-    internal var customHeader = false
-    internal var customFooter = false
+    var customHeader = false
+    var customFooter = false
     private var tabListHeader: TextComponent? = null
     private var tabListFooter: TextComponent? = null
 
@@ -313,7 +313,7 @@ object TabList {
         needsUpdate = true
     }
 
-    internal fun clearCustom() {
+    fun clearCustom() {
         tabListNames.clear()
         customHeader = false
         customFooter = false

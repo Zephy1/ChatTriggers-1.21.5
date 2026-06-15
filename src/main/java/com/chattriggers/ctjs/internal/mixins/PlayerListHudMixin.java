@@ -33,7 +33,7 @@ public class PlayerListHudMixin {
         cancellable = true
     )
     private void ctjs$keepCustomHeader(Text header, CallbackInfo ci) {
-        if (TabList.INSTANCE.getCustomHeader$ctjs()) {
+        if (TabList.INSTANCE.getCustomHeader()) {
             ci.cancel();
         }
     }
@@ -46,7 +46,7 @@ public class PlayerListHudMixin {
         cancellable = true
     )
     private void ctjs$keepCustomFooter(Text footer, CallbackInfo ci) {
-        if (TabList.INSTANCE.getCustomFooter$ctjs()) {
+        if (TabList.INSTANCE.getCustomFooter()) {
             ci.cancel();
         }
     }

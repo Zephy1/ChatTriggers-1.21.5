@@ -18,7 +18,7 @@ public class ScoreboardObjectiveMixin {
         cancellable = true
     )
     private void chattriggers$keepCustomName(Text name, CallbackInfo ci) {
-        if (Scoreboard.INSTANCE.getCustomTitle$ctjs()) {
+        if (Scoreboard.INSTANCE.getCustomTitle()) {
             ci.cancel();
         }
     }

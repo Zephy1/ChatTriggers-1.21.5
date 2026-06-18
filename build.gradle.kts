@@ -55,7 +55,9 @@ dependencies {
 }
 
 loom {
-    accessWidenerPath.set(file("../../src/main/resources/ctjs.accesswidener"))
+    val local = file("src/main/resources/ctjs.accesswidener")
+    val global = file("../../src/main/resources/ctjs.accesswidener")
+    accessWidenerPath.set(if (local.exists()) local else global)
 
     runConfigs {
         named("client") {

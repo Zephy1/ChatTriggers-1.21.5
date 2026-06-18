@@ -1,8 +1,6 @@
 import org.gradle.kotlin.dsl.support.unzipTo
 import org.jetbrains.dokka.versioning.VersioningConfiguration
 import org.jetbrains.dokka.versioning.VersioningPlugin
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.net.HttpURLConnection
 import java.net.URI
 
@@ -15,7 +13,6 @@ buildscript {
 plugins {
     alias(libs.plugins.kotlin)
     alias(libs.plugins.serialization)
-//    alias(libs.plugins.loom)
     alias(libs.plugins.dokka)
     alias(libs.plugins.ksp)
     id("gg.essential.multi-version")
@@ -40,11 +37,11 @@ dependencies {
     implementation(project(":rhino"))
     include(project(":rhino"))
 
-    modImplementation(libs.bundles.included) { include(this) }
-    modImplementation(libs.bundles.essential) { include(this) }
     val universalCraftVersion = project.findProperty("universalcraft").toString()
-    val universalCraftLibVersion = libs.versions.universalcraft.get()
-    modImplementation("gg.essential:universalcraft-$universalCraftVersion:${universalCraftLibVersion}") { include(this) }
+    modImplementation(include("gg.essential:universalcraft-${universalCraftVersion}:${libs.versions.universalcraft.get()}")!!)
+    implementation(include("gg.essential:vigilance:${libs.versions.vigilance.get()}")!!)
+    implementation(include("gg.essential:elementa:${libs.versions.elementa.get()}")!!)
+    modImplementation(libs.bundles.included) { include(this) }
 
     val modmenuVersion = project.findProperty("modmenu").toString()
     modApi("com.terraformersmc:modmenu:$modmenuVersion")

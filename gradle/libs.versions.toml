@@ -1,6 +1,5 @@
 [versions]
 mapping-io = "0.8.0"
-#rhino = "7c7c509668"
 jackson-core = "2.20.0"
 textarea = "3.6.3"
 serialization = "1.11.0"
@@ -12,7 +11,7 @@ vigilance = "314"
 universalcraft = "505"
 
 # Kotlin
-kotlin = "2.4.0"
+kotlin = "2.3.10"
 ksp = "2.3.9"
 
 [libraries]
@@ -20,7 +19,6 @@ elementa = { module = "gg.essential:elementa", version.ref = "elementa" }
 vigilance = { module = "gg.essential:vigilance", version.ref = "vigilance" }
 
 mapping-io = { module = "net.fabricmc:mapping-io", version.ref = "mapping-io" }
-#rhino = { module = "com.github.ChatTriggers:rhino", version.ref = "rhino" }
 jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson-core" }
 textarea = { module = "com.fifesoft:rsyntaxtextarea", version.ref = "textarea" }
 serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
@@ -33,16 +31,10 @@ ksp = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = 
 gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 
 [bundles]
-#fabric = ["fabric-loader", "fabric-api", "fabric-kotlin"]
 included = ["mapping-io", "jackson-core", "textarea", "serialization", "koffee"]
-essential = ["elementa", "vigilance"]
 
 [plugins]
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-#loom = { id = "fabric-loom", version.ref = "loom" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
-#validator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "validator" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
-#essentialMultiversion = { id = "gg.essential.multi-version", version.ref = "essentialMultiversion" }
-#essentialDefaults = { id = "gg.essential.defaults", version.ref = "essentialDefaults" }

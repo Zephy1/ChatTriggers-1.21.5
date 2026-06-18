@@ -17,7 +17,6 @@ plugins {
     alias(libs.plugins.serialization)
 //    alias(libs.plugins.loom)
     alias(libs.plugins.dokka)
-    id("org.jetbrains.kotlinx.binary-compatibility-validator")
     alias(libs.plugins.ksp)
     id("gg.essential.multi-version")
     id("gg.essential.defaults")
@@ -71,10 +70,6 @@ loom {
 
 base {
     archivesName.set(property("archives_base_name") as String)
-}
-
-apiValidation {
-    ignoredPackages += "com.chattriggers.ctjs.internal"
 }
 
 tasks {

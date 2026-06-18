@@ -73,15 +73,11 @@ tasks {
     processResources {
         val minecraftVersion = project.platform.mcVersionStr
         val version = project.version
-        val yarnVersion = if (!project.platform.isUnobfuscated) {
-            project.platform.yarnVersion?.replace(":v2", "") ?: throw IllegalStateException("yarnVersion is not set for platform ${project.platform}")
-        } else null
         val minFabricApiVersion = project.findProperty("min-fabric-api")?.toString()
 
         inputs.property("version", version)
         inputs.property("minecraftVersion", minecraftVersion)
         inputs.property("min_fabric_api_version", minFabricApiVersion.toString())
-        if (yarnVersion != null) inputs.property("yarn_mappings", yarnVersion)
 
         filesMatching("fabric.mod.json") {
             val props = mutableMapOf(
@@ -89,8 +85,15 @@ tasks {
                 "minecraftVersion" to minecraftVersion,
                 "min_fabric_api_version" to minFabricApiVersion,
             )
-            if (yarnVersion != null) props["yarn_mappings"] = yarnVersion
             expand(props)
+        }
+
+        val javaVersion = project.java.toolchain.languageVersion.get().asInt()
+        inputs.property("compatibilityLevel", javaVersion)
+        filesMatching("ctjs.mixins.json") {
+            filter { line ->
+                line.replace("JAVA_\$compatibilityLevel", "JAVA_$javaVersion")
+            }
         }
     }
 

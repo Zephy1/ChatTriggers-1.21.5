@@ -47,7 +47,6 @@
         "fabric-language-kotlin": ">=1.13.8+kotlin.2.3.0"
     },
     "custom": {
-        "ctjs:yarn-mappings": "$yarn_mappings",
         "modmenu": {
             "links": {
                 "modmenu.discord": "https://discord.gg/chattriggers"

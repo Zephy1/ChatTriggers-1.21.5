@@ -209,7 +209,7 @@ fun getBranch(): String {
 
 afterEvaluate {
     val hasRemapJar = tasks.findByName("remapJar") != null
-    val outputTaskName = if (hasRemapJar) "remapJar" else "shadowJar"
+    val outputTaskName = if (hasRemapJar) "remapJar" else "jar"
 
     tasks.register<Copy>("collectJars") {
         group = "build"

@@ -7,22 +7,22 @@ import com.chattriggers.ctjs.internal.engine.JSLoader
 import com.chattriggers.ctjs.internal.utils.getOrNull
 import com.chattriggers.ctjs.internal.utils.toIdentifier
 import gg.essential.universal.UMatrixStack
-import net.minecraft.client.font.TextRenderer
-import net.minecraft.client.gui.DrawContext
-import net.minecraft.client.toast.ToastManager
-import net.minecraft.util.Identifier
-import net.minecraft.client.toast.Toast
+import net.minecraft.client.gui.Font
+import net.minecraft.client.gui.components.toasts.ToastManager
+import net.minecraft.resources.Identifier
+import net.minecraft.client.gui.components.toasts.Toast
 import org.mozilla.javascript.Callable
 import org.mozilla.javascript.Context
 import org.mozilla.javascript.NativeObject
 import org.mozilla.javascript.Scriptable
 import org.mozilla.javascript.Undefined
 
-//#if MC<=12105
-//$$import net.minecraft.client.render.RenderLayer
-//$$import com.mojang.blaze3d.systems.RenderSystem
+import net.minecraft.client.renderer.RenderPipelines
+
+//#if MC<=12111
+//$$import net.minecraft.client.gui.GuiGraphics
 //#else
-import net.minecraft.client.gl.RenderPipelines
+import net.minecraft.client.gui.GuiGraphicsExtractor
 //#endif
 
 // https://github.com/Edgeburn/Toasts
@@ -56,7 +56,7 @@ class Toast(config: NativeObject) : Toast {
             descriptionBacker = value?.let { TextComponent(it) }
         }
 
-    private var backgroundBacker: Identifier? = Identifier.ofVanilla("toast/advancement")
+    private var backgroundBacker: Identifier? = Identifier.withDefaultNamespace("toast/advancement")
     var background: Any?
         get() = backgroundBacker
         set(value) {
@@ -73,12 +73,12 @@ class Toast(config: NativeObject) : Toast {
     private var toastWidth = config.getOrNull("width")?.let {
         require(it is Number) { "Toast \"width\" must be a number" }
         it.toInt()
-    } ?: super.getWidth()
+    } ?: super.width()
 
     private var toastHeight = config.getOrNull("height")?.let {
         require(it is Number) { "Toast \"height\" must be a number" }
         it.toInt()
-    } ?: super.getHeight()
+    } ?: super.height()
 
     var displayTime = config.getOrNull("displayTime")?.let {
         require(it is Number) { "Toast \"displayTime\" must be a number" }
@@ -105,29 +105,43 @@ class Toast(config: NativeObject) : Toast {
         icon = config.getOrNull("icon")
     }
 
-    override fun getWidth() = toastWidth
-    override fun getHeight() = toastHeight
+    override fun width() = toastWidth
+    override fun height() = toastHeight
 
     fun show() = apply {
         startTime = null
-        Client.getMinecraft().toastManager.add(this)
+        //#if MC<26.2
+        //$$Client.getMinecraft().toastManager.addToast(this)
+        //#else
+        Client.getMinecraft().gui.toastManager().addToast(this)
+        //#endif
     }
 
-    override fun getVisibility(): Toast.Visibility? = visibility
+    override fun getWantedVisibility(): Toast.Visibility = visibility
 
-    override fun update(manager: ToastManager?, time: Long) {
+    override fun update(manager: ToastManager, time: Long) {
         if (startTime == null) {
             startTime = time
         }
 
-        val duration = displayTime * (manager?.notificationDisplayTimeMultiplier ?: 1.0)
+        val duration = displayTime * (manager.notificationDisplayTimeMultiplier)
         val elapsed = time - startTime!!
         visibility = if (elapsed < duration) Toast.Visibility.SHOW else Toast.Visibility.HIDE
     }
 
-    override fun draw(context: DrawContext, textRenderer: TextRenderer, startTime: Long) {
+    //#if MC<=12111
+    //$$override fun render(
+    //#else
+    override fun extractRenderState(
+    //#endif
+        //#if MC<=12111
+        //$$drawContext: GuiGraphics,
+        //#else
+        drawContext: GuiGraphicsExtractor,
+        //#endif
+        textRenderer: Font, startTime: Long) {
         if (customRenderFunction != null) {
-            GUIRenderer.withMatrix(UMatrixStack(context.matrices).toMC()) {
+            GUIRenderer.withMatrix(UMatrixStack(drawContext.pose()).toMC()) {
                 try {
                     JSLoader.invoke(customRenderFunction!!, emptyArray(), thisObj = jsReceiver!!)
                 } catch (e: Throwable) {
@@ -139,34 +153,36 @@ class Toast(config: NativeObject) : Toast {
             }
         } else {
             backgroundBacker?.let {
-                //#if MC<=12105
-                //$$RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f)
-                //$$context.drawGuiTexture(RenderLayer::getGuiTextured, it, 0, 0, width, height)
-                //#else
-                context.drawGuiTexture(RenderPipelines.GUI_TEXTURED, it, 0, 0, width, height)
-                //#endif
+                drawContext.blitSprite(RenderPipelines.GUI_TEXTURED, it, 0, 0, width(), height())
             }
 
             iconBacker?.let { it: Identifier ->
-                val iconSize = height - ICON_PADDING * 2
-                //#if MC<=12105
-                //$$RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f)
-                //$$context.drawGuiTexture(RenderLayer::getGuiTextured, it, ICON_PADDING, ICON_PADDING, iconSize,iconSize)
-                //#else
-                context.drawGuiTexture(RenderPipelines.GUI_TEXTURED, it, ICON_PADDING, ICON_PADDING, iconSize,iconSize)
-                //#endif
+                val iconSize = height() - ICON_PADDING * 2
+                drawContext.blitSprite(RenderPipelines.GUI_TEXTURED, it, ICON_PADDING, ICON_PADDING, iconSize,iconSize)
             }
 
-            val textX = if (icon == null) ICON_PADDING else height
+            val textX = if (icon == null) ICON_PADDING else height()
             var textY = ICON_PADDING
 
             titleBacker?.let {
-                context.drawText(textRenderer, it, textX, textY, 0xFFFFFF, false)
-                textY += textRenderer.fontHeight + 1
+                //#if MC<=12111
+                //$$drawContext.drawString(
+                //#else
+                drawContext.text(
+                //#endif
+                    textRenderer, it, textX, textY, 0xFFFFFF, false
+                )
+                textY += textRenderer.lineHeight + 1
             }
 
             descriptionBacker?.let {
-                context.drawText(textRenderer, it, textX, textY, 0xFFFFFF, false)
+                //#if MC<=12111
+                //$$drawContext.drawString(
+                //#else
+                drawContext.text(
+                //#endif
+                    textRenderer, it, textX, textY, 0xFFFFFF, false
+                )
             }
         }
     }

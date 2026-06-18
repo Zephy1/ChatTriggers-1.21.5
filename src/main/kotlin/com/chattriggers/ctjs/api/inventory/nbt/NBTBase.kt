@@ -1,27 +1,27 @@
 package com.chattriggers.ctjs.api.inventory.nbt
 
 import com.chattriggers.ctjs.api.CTWrapper
-import com.chattriggers.ctjs.MCNbtBase
-import com.chattriggers.ctjs.MCNbtCompound
-import com.chattriggers.ctjs.MCNbtList
-import net.minecraft.nbt.NbtByte
-import net.minecraft.nbt.NbtByteArray
-import net.minecraft.nbt.NbtDouble
-import net.minecraft.nbt.NbtFloat
-import net.minecraft.nbt.NbtInt
-import net.minecraft.nbt.NbtIntArray
-import net.minecraft.nbt.NbtLong
-import net.minecraft.nbt.NbtShort
-import net.minecraft.nbt.NbtString
+import net.minecraft.nbt.ByteTag
+import net.minecraft.nbt.ByteArrayTag
+import net.minecraft.nbt.CompoundTag
+import net.minecraft.nbt.DoubleTag
+import net.minecraft.nbt.FloatTag
+import net.minecraft.nbt.IntTag
+import net.minecraft.nbt.IntArrayTag
+import net.minecraft.nbt.ListTag
+import net.minecraft.nbt.LongTag
+import net.minecraft.nbt.ShortTag
+import net.minecraft.nbt.StringTag
+import net.minecraft.nbt.Tag
 import org.mozilla.javascript.NativeArray
 import org.mozilla.javascript.NativeObject
 
-open class NBTBase(override val mcValue: MCNbtBase) : CTWrapper<MCNbtBase> {
+open class NBTBase(override val mcValue: Tag) : CTWrapper<Tag> {
     /**
      * Gets the type byte for the tag.
      */
     val id: Byte
-        get() = mcValue.type
+        get() = mcValue.id
 
     /**
      * Creates a clone of the tag.
@@ -33,7 +33,7 @@ open class NBTBase(override val mcValue: MCNbtBase) : CTWrapper<MCNbtBase> {
      */
     fun hasNoTags() = when (this) {
         is NBTTagCompound -> tagMap.isEmpty()
-        is NBTTagList -> mcValue.isEmpty()
+        is NBTTagList -> mcValue.isEmpty
         else -> false
     }
 
@@ -47,34 +47,34 @@ open class NBTBase(override val mcValue: MCNbtBase) : CTWrapper<MCNbtBase> {
 
     companion object {
         @JvmStatic
-        fun fromMC(nbt: MCNbtBase): NBTBase = when (nbt) {
-            is MCNbtCompound -> NBTTagCompound(nbt)
-            is MCNbtList -> NBTTagList(nbt)
+        fun fromMC(nbt: Tag): NBTBase = when (nbt) {
+            is CompoundTag -> NBTTagCompound(nbt)
+            is ListTag -> NBTTagList(nbt)
             else -> NBTBase(nbt)
         }
 
-        fun MCNbtBase.toObject(): Any? {
+        fun Tag.toObject(): Any? {
             return when (this) {
-                is NbtString -> asString()
-                is NbtByte -> byteValue()
-                is NbtShort -> shortValue()
-                is NbtInt -> intValue()
-                is NbtLong -> longValue()
-                is NbtFloat -> floatValue()
-                is NbtDouble -> doubleValue()
-                is MCNbtCompound -> toObject()
-                is MCNbtList -> toObject()
-                is NbtByteArray -> NativeArray(byteArray.toTypedArray()).expose()
-                is NbtIntArray -> NativeArray(intArray.toTypedArray()).expose()
+                is StringTag -> asString()
+                is ByteTag -> byteValue()
+                is ShortTag -> shortValue()
+                is IntTag -> intValue()
+                is LongTag -> longValue()
+                is FloatTag -> floatValue()
+                is DoubleTag -> doubleValue()
+                is CompoundTag -> toObject()
+                is ListTag -> toObject()
+                is ByteArrayTag -> NativeArray(asByteArray.toTypedArray()).expose()
+                is IntArrayTag -> NativeArray(asIntArray.toTypedArray()).expose()
                 else -> error("Unknown tag type $javaClass")
             }
         }
 
-        fun MCNbtCompound.toObject(): NativeObject {
+        fun CompoundTag.toObject(): NativeObject {
             val o = NativeObject()
             o.expose()
 
-            for (key in keys) {
+            for (key in keySet()) {
                 val value = this[key]
                 if (value != null) {
                     o.put(key, o, value.toObject())
@@ -84,7 +84,7 @@ open class NBTBase(override val mcValue: MCNbtBase) : CTWrapper<MCNbtBase> {
             return o
         }
 
-        fun MCNbtList.toObject(): NativeArray {
+        fun ListTag.toObject(): NativeArray {
             val tags = mutableListOf<Any?>()
             for (i in 0 until count()) {
                 tags.add(get(i).toObject())

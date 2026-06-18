@@ -112,16 +112,15 @@ class Shape(private var color: Long) {
 
     fun draw(): Shape = apply {
         GUIRenderer.apply {
-            val renderLayer = CTRenderLayers.getRenderLayer(drawMode, vertexFormat)
+            val renderLayer = RenderLayers.getRenderLayer(drawMode, vertexFormat)
             renderLayer?.let {
                 RenderUtils.begin(renderLayer)
 
                 if (area < 0) {
-                    vertexes.forEach { RenderUtils.cameraPos(it.x, it.y).color(color) }
+                    vertexes.forEach { RenderUtils.cameraPos(it.x, it.y).colorizeRGBA(color) }
                 } else {
-                    reversedVertexes.forEach { RenderUtils.cameraPos( it.x, it.y).color(color) }
+                    reversedVertexes.forEach { RenderUtils.cameraPos( it.x, it.y).colorizeRGBA(color) }
                 }
-
                 draw()
             }
         }

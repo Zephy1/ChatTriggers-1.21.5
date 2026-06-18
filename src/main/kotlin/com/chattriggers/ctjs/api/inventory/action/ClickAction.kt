@@ -1,22 +1,28 @@
 package com.chattriggers.ctjs.api.inventory.action
 
-import com.chattriggers.ctjs.api.client.Player
-import net.minecraft.screen.slot.SlotActionType
+import com.chattriggers.ctjs.api.client.CTPlayer
+import com.chattriggers.ctjs.api.inventory.CTClickType
+
+//#if MC<=12111
+//$$import net.minecraft.world.inventory.ClickType
+//#else
+import net.minecraft.world.inventory.ContainerInput
+//#endif
 
 class ClickAction(slot: Int, windowId: Int) : Action(slot, windowId) {
-    private lateinit var clickType: ClickType
+    private lateinit var clickType: CTClickType
     private var holdingShift = false
-    private var itemInHand = Player.getHeldItem() != null
+    private var itemInHand = CTPlayer.getHeldItem() != null
     private var pickupAll = false
 
-    fun getClickType(): ClickType = clickType
+    fun getClickType(): CTClickType = clickType
 
     /**
      * The type of click (REQUIRED)
      *
      * @param clickType the new click type
      */
-    fun setClickType(clickType: ClickType) = apply {
+    fun setClickType(clickType: CTClickType) = apply {
         this.clickType = clickType
     }
 
@@ -63,23 +69,24 @@ class ClickAction(slot: Int, windowId: Int) : Action(slot, windowId) {
      * @return the current Action for method chaining
      */
     fun setClickString(clickType: String) = apply {
-        this.clickType = ClickType.valueOf(clickType.uppercase())
+        this.clickType = CTClickType.valueOf(clickType.uppercase())
     }
 
     override fun complete() {
         val mode = when {
-            clickType == ClickType.MIDDLE -> SlotActionType.CLONE
-            holdingShift -> SlotActionType.QUICK_MOVE
-            pickupAll -> SlotActionType.PICKUP_ALL
-            else -> SlotActionType.PICKUP
+            //#if MC<=12111
+            //$$clickType == CTClickType.MIDDLE -> ClickType.CLONE
+            //$$holdingShift -> ClickType.QUICK_MOVE
+            //$$pickupAll -> ClickType.PICKUP_ALL
+            //$$else -> ClickType.PICKUP
+            //#else
+            clickType == CTClickType.MIDDLE -> ContainerInput.CLONE
+            holdingShift -> ContainerInput.QUICK_MOVE
+            pickupAll -> ContainerInput.PICKUP_ALL
+            else -> ContainerInput.PICKUP
+            //#endif
         }
 
         doClick(clickType.button, mode)
-    }
-
-    enum class ClickType(val button: Int) {
-        LEFT(0),
-        RIGHT(1),
-        MIDDLE(2),
     }
 }

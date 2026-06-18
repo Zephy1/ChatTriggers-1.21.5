@@ -1,19 +1,19 @@
 package com.chattriggers.ctjs.api.inventory.nbt
 
-import com.chattriggers.ctjs.MCNbtBase
-import com.chattriggers.ctjs.MCNbtCompound
-import com.chattriggers.ctjs.MCNbtList
 import com.chattriggers.ctjs.internal.utils.getOption
-import net.minecraft.nbt.NbtByte
-import net.minecraft.nbt.NbtByteArray
-import net.minecraft.nbt.NbtDouble
-import net.minecraft.nbt.NbtFloat
-import net.minecraft.nbt.NbtInt
-import net.minecraft.nbt.NbtIntArray
-import net.minecraft.nbt.NbtLong
-import net.minecraft.nbt.NbtLongArray
-import net.minecraft.nbt.NbtShort
-import net.minecraft.nbt.NbtString
+import net.minecraft.nbt.ByteTag
+import net.minecraft.nbt.ByteArrayTag
+import net.minecraft.nbt.CompoundTag
+import net.minecraft.nbt.DoubleTag
+import net.minecraft.nbt.FloatTag
+import net.minecraft.nbt.IntTag
+import net.minecraft.nbt.IntArrayTag
+import net.minecraft.nbt.ListTag
+import net.minecraft.nbt.LongTag
+import net.minecraft.nbt.LongArrayTag
+import net.minecraft.nbt.ShortTag
+import net.minecraft.nbt.StringTag
+import net.minecraft.nbt.Tag
 import org.mozilla.javascript.NativeArray
 import org.mozilla.javascript.NativeObject
 
@@ -38,10 +38,10 @@ object NBT {
     @JvmOverloads
     fun parse(nbt: Any, options: NativeObject? = null): NBTBase {
         return when (nbt) {
-            is NativeObject -> NBTTagCompound(nbt.toNBT(options) as MCNbtCompound)
+            is NativeObject -> NBTTagCompound(nbt.toNBT(options) as CompoundTag)
             is NativeArray -> {
                 nbt.toNBT(options).let {
-                    if (it is MCNbtList) {
+                    if (it is ListTag) {
                         NBTTagList(it)
                     } else {
                         NBTBase(it)
@@ -58,12 +58,12 @@ object NBT {
     @JvmStatic
     fun toArray(nbt: NBTTagList): NativeArray = nbt.toArray()
 
-    private fun Any.toNBT(options: NativeObject?): MCNbtBase {
+    private fun Any.toNBT(options: NativeObject?): Tag {
         val preferArraysOverLists = options.getOption<Boolean>("preferArraysOverLists", false)
         val coerceNumericStrings = options.getOption<Boolean>("coerceNumericStrings", false)
 
         return when (this) {
-            is NativeObject -> MCNbtCompound().apply {
+            is NativeObject -> CompoundTag().apply {
                 entries.forEach { entry ->
                     put(entry.key.toString(), entry.value.toNBT(options))
                 }
@@ -72,45 +72,45 @@ object NBT {
                 val normalized = map { it?.toNBT(options) }
 
                 if (!preferArraysOverLists || normalized.isEmpty()) {
-                    return MCNbtList().apply { addAll(normalized) }
+                    return ListTag().apply { addAll(normalized) }
                 }
 
                 return when {
-                    (normalized.all { it is NbtByte }) -> {
-                        NbtByteArray(normalized.map { (it as NbtByte).byteValue() }.toByteArray())
+                    (normalized.all { it is ByteTag }) -> {
+                        ByteArrayTag(normalized.map { (it as ByteTag).byteValue() }.toByteArray())
                     }
 
-                    (normalized.all { it is NbtInt }) -> {
-                        NbtIntArray(normalized.map { (it as NbtInt).intValue() }.toIntArray())
+                    (normalized.all { it is IntTag }) -> {
+                        IntArrayTag(normalized.map { (it as IntTag).intValue() }.toIntArray())
                     }
 
-                    (normalized.all { it is NbtLong }) -> {
-                        NbtLongArray(normalized.map { (it as NbtLong).longValue() }.toLongArray())
+                    (normalized.all { it is LongTag }) -> {
+                        LongArrayTag(normalized.map { (it as LongTag).longValue() }.toLongArray())
                     }
 
-                    else -> MCNbtList().apply { addAll(normalized) }
+                    else -> ListTag().apply { addAll(normalized) }
                 }
             }
-            is Boolean -> NbtByte.of(if (this) 1 else 0)
+            is Boolean -> ByteTag.valueOf(if (this) 1 else 0)
             is CharSequence -> parseString(this.toString(), coerceNumericStrings)
-            is Byte -> NbtByte.of(this)
-            is Short -> NbtShort.of(this)
-            is Int -> NbtInt.of(this)
-            is Long -> NbtLong.of(this)
-            is Float -> NbtFloat.of(this)
-            is Double -> NbtDouble.of(this)
+            is Byte -> ByteTag.valueOf(this)
+            is Short -> ShortTag.valueOf(this)
+            is Int -> IntTag.valueOf(this)
+            is Long -> LongTag.valueOf(this)
+            is Float -> FloatTag.valueOf(this)
+            is Double -> DoubleTag.valueOf(this)
             else -> throw IllegalArgumentException("Invalid NBT. Value provided: $this")
         }
     }
 
     private val numberNBTFormat = Regex("^([+-]?\\d+\\.?\\d*)([bslfd])?\$", RegexOption.IGNORE_CASE)
 
-    private fun parseString(nbtData: String, coerceNumericStrings: Boolean): MCNbtBase {
+    private fun parseString(nbtData: String, coerceNumericStrings: Boolean): Tag {
         if (!coerceNumericStrings) {
-            return NbtString.of(nbtData)
+            return StringTag.valueOf(nbtData)
         }
 
-        val res = numberNBTFormat.matchEntire(nbtData)?.groupValues ?: return NbtString.of(nbtData)
+        val res = numberNBTFormat.matchEntire(nbtData)?.groupValues ?: return StringTag.valueOf(nbtData)
 
         val number = res[1]
         val suffix = res[2]
@@ -118,17 +118,17 @@ object NBT {
         return when (suffix.lowercase()) {
             "" -> {
                 if (number.contains(".")) {
-                    NbtDouble.of(number.toDouble())
+                    DoubleTag.valueOf(number.toDouble())
                 } else {
-                    NbtInt.of(number.toInt())
+                    IntTag.valueOf(number.toInt())
                 }
             }
-            "b" -> NbtByte.of(number.toByte())
-            "s" -> NbtShort.of(number.toShort())
-            "l" -> NbtLong.of(number.toLong())
-            "f" -> NbtFloat.of(number.toFloat())
-            "d" -> NbtDouble.of(number.toDouble())
-            else -> NbtString.of(nbtData)
+            "b" -> ByteTag.valueOf(number.toByte())
+            "s" -> ShortTag.valueOf(number.toShort())
+            "l" -> LongTag.valueOf(number.toLong())
+            "f" -> FloatTag.valueOf(number.toFloat())
+            "d" -> DoubleTag.valueOf(number.toDouble())
+            else -> StringTag.valueOf(nbtData)
         }
     }
 }

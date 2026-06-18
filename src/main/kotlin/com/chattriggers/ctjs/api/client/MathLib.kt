@@ -41,4 +41,13 @@ object MathLib {
     fun clamp(number: Int, min: Int, max: Int): Int {
         return number.coerceIn(min, max)
     }
+
+    @JvmStatic
+    fun wrapAngleTo180(value: Double): Double = (value % 360.0).let {
+        when {
+            it >= 180.0 -> it - 360.0
+            it <= -180.0 -> it + 360.0
+            else -> it
+        }
+    }
 }

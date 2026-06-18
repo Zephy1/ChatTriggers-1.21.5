@@ -180,12 +180,12 @@ object Register {
      * Registers a new trigger that runs when a tooltip is being rendered.
      * This allows for the user to modify what text is in the tooltip, and even the
      * ability to cancel rendering completely. Note that you must call
-     * [com.chattriggers.ctjs.api.inventory.Item.setLore] with the modified lore for
+     * [com.chattriggers.ctjs.api.inventory.CTItem.setLore] with the modified lore for
      * the changes to take effect.
      *
      * Passes through three arguments:
      * - A list of [com.chattriggers.ctjs.api.message.TextComponent] objects to modify.
-     * - The [com.chattriggers.ctjs.api.inventory.Item] that this lore is attached to.
+     * - The [com.chattriggers.ctjs.api.inventory.CTItem] that this lore is attached to.
      * - The cancellable event.
      *
      * Available modifications:
@@ -203,9 +203,9 @@ object Register {
      * Passes through three arguments:
      * - The [com.chattriggers.ctjs.api.entity.PlayerInteraction]
      * - The object of interaction, depending on the interaction type. Either a
-     *   [com.chattriggers.ctjs.api.entity.Entity],
-     *   [com.chattriggers.ctjs.api.world.block.Block], or
-     *   [com.chattriggers.ctjs.api.inventory.Item],
+     *   [com.chattriggers.ctjs.api.entity.CTEntity],
+     *   [com.chattriggers.ctjs.api.world.block.CTBlock], or
+     *   [com.chattriggers.ctjs.api.inventory.CTItem],
      * - The event, which can be cancelled if the interaction is not BreakBlock
      *
      * Available modifications:
@@ -281,7 +281,7 @@ object Register {
      * Registers a new trigger that runs before an item is dropped.
      *
      * Passes through two arguments:
-     * - The [com.chattriggers.ctjs.api.inventory.Item] that was dropped
+     * - The [com.chattriggers.ctjs.api.inventory.CTItem] that was dropped
      * - Whether the entire stack (true), or just 1 item (false) will be dropped
      * - The event, which can be cancelled
      *
@@ -533,7 +533,7 @@ object Register {
      * Registers a new trigger that runs whenever a block entity is rendered
      *
      * Passes through three arguments:
-     * - The [com.chattriggers.ctjs.api.entity.BlockEntity]
+     * - The [com.chattriggers.ctjs.api.entity.CTBlockEntity]
      * - The partial ticks
      * - The event, which can be cancelled
      *
@@ -552,7 +552,7 @@ object Register {
      * Registers a new trigger that runs whenever an entity is rendered
      *
      * Passes through three arguments:
-     * - The [com.chattriggers.ctjs.api.entity.Entity]
+     * - The [com.chattriggers.ctjs.api.entity.CTEntity]
      * - The partial ticks
      * - The event, which can be cancelled
      *
@@ -678,7 +678,7 @@ object Register {
      * Registers a new trigger that runs whenever a particle is spawned
      *
      * Passes through two arguments:
-     * - The [com.chattriggers.ctjs.api.entity.Particle]
+     * - The [com.chattriggers.ctjs.api.entity.CTParticle]
      * - The event, which can be cancelled
      *
      * Available modifications:

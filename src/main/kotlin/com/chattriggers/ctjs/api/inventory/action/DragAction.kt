@@ -1,19 +1,25 @@
 package com.chattriggers.ctjs.api.inventory.action
 
-import net.minecraft.screen.slot.SlotActionType
+import com.chattriggers.ctjs.api.inventory.CTClickType
+
+//#if MC<=12111
+//$$import net.minecraft.world.inventory.ClickType
+//#else
+import net.minecraft.world.inventory.ContainerInput
+//#endif
 
 class DragAction(slot: Int, windowId: Int) : Action(slot, windowId) {
-    private lateinit var clickType: ClickType
+    private lateinit var clickType: CTClickType
     private lateinit var stage: Stage
 
-    fun getClickType(): ClickType = clickType
+    fun getClickType(): CTClickType = clickType
 
     /**
      * The type of click (REQUIRED)
      *
      * @param clickType the new click type
      */
-    fun setClickType(clickType: ClickType) = apply {
+    fun setClickType(clickType: CTClickType) = apply {
         this.clickType = clickType
     }
 
@@ -39,7 +45,7 @@ class DragAction(slot: Int, windowId: Int) : Action(slot, windowId) {
      * @return the current Action for method chaining
      */
     fun setClickString(clickType: String) = apply {
-        this.clickType = ClickType.valueOf(clickType.uppercase())
+        this.clickType = CTClickType.valueOf(clickType.uppercase())
     }
 
     /**
@@ -61,18 +67,17 @@ class DragAction(slot: Int, windowId: Int) : Action(slot, windowId) {
             println("Enforcing slot of -999")
         }
 
-        doClick(button, SlotActionType.QUICK_CRAFT)
-    }
-
-    enum class ClickType(val button: Int) {
-        LEFT(0),
-        RIGHT(1),
-        MIDDLE(2);
+        //#if MC<=12111
+        //$$doClick(button, ClickType.QUICK_CRAFT)
+        //#else
+        doClick(button, ContainerInput.QUICK_CRAFT)
+        //#endif
     }
 
     enum class Stage(val stage: Int) {
         BEGIN(0),
         SLOT(1),
-        END(2);
+        END(2),
+        ;
     }
 }

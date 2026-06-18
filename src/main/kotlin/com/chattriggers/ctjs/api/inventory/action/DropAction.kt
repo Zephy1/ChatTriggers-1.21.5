@@ -1,6 +1,10 @@
 package com.chattriggers.ctjs.api.inventory.action
 
-import net.minecraft.screen.slot.SlotActionType
+//#if MC<=12111
+//$$import net.minecraft.world.inventory.ClickType
+//#else
+import net.minecraft.world.inventory.ContainerInput
+//#endif
 
 class DropAction(slot: Int, windowId: Int) : Action(slot, windowId) {
     private var holdingCtrl = false
@@ -17,6 +21,10 @@ class DropAction(slot: Int, windowId: Int) : Action(slot, windowId) {
     }
 
     override fun complete() {
-        doClick(if (holdingCtrl) 1 else 0, SlotActionType.THROW)
+        //#if MC<=12111
+        //$$doClick(if (holdingCtrl) 1 else 0, ClickType.THROW)
+        //#else
+        doClick(if (holdingCtrl) 1 else 0, ContainerInput.THROW)
+        //#endif
     }
 }

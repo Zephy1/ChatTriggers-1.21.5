@@ -45,7 +45,7 @@ object Config : Vigilant(File(CTJS.configLocation, "ChatTriggers.toml"), sorting
         category = "General",
         description = "Check for and download module updates every time CT loads",
     )
-    var autoUpdateModules = true
+    var autoUpdateModules = false
 
     @JvmStatic
     @Property(

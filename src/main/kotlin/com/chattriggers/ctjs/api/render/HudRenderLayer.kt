@@ -1,26 +1,7 @@
 package com.chattriggers.ctjs.api.render
 
-import net.minecraft.util.Identifier
+import net.minecraft.resources.Identifier
 
-//#if MC<=12105
-//$$import net.fabricmc.fabric.api.client.rendering.v1.IdentifiedLayer
-//$$enum class HudRenderLayer(val mcValue: Identifier) {
-//$$    MISC_OVERLAYS(IdentifiedLayer.MISC_OVERLAYS),
-//$$    CROSSHAIR(IdentifiedLayer.CROSSHAIR),
-//$$    HOTBAR_AND_BARS(IdentifiedLayer.HOTBAR_AND_BARS),
-//$$    EXPERIENCE_LEVEL(IdentifiedLayer.EXPERIENCE_LEVEL),
-//$$    STATUS_EFFECTS(IdentifiedLayer.STATUS_EFFECTS),
-//$$    BOSS_BAR(IdentifiedLayer.BOSS_BAR),
-//$$    SLEEP(IdentifiedLayer.SLEEP),
-//$$    DEMO_TIMER(IdentifiedLayer.DEMO_TIMER),
-//$$    DEBUG(IdentifiedLayer.DEBUG),
-//$$    SCOREBOARD(IdentifiedLayer.SCOREBOARD),
-//$$    OVERLAY_MESSAGE(IdentifiedLayer.OVERLAY_MESSAGE),
-//$$    TITLE_AND_SUBTITLE(IdentifiedLayer.TITLE_AND_SUBTITLE),
-//$$    CHAT(IdentifiedLayer.CHAT),
-//$$    PLAYER_LIST(IdentifiedLayer.PLAYER_LIST),
-//$$    SUBTITLES(IdentifiedLayer.SUBTITLES);
-//#else
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements
 enum class HudRenderLayer(val mcValue: Identifier) {
     MISC_OVERLAYS(VanillaHudElements.MISC_OVERLAYS),
@@ -36,7 +17,11 @@ enum class HudRenderLayer(val mcValue: Identifier) {
     EXPERIENCE_LEVEL(VanillaHudElements.EXPERIENCE_LEVEL),
     HELD_ITEM_TOOLTIP(VanillaHudElements.HELD_ITEM_TOOLTIP),
     SPECTATOR_TOOLTIP(VanillaHudElements.SPECTATOR_TOOLTIP),
-    STATUS_EFFECTS(VanillaHudElements.STATUS_EFFECTS),
+    //#if MC<=12111
+    //$$STATUS_EFFECTS(VanillaHudElements.STATUS_EFFECTS),
+    //#else
+    MOB_EFFECTS(VanillaHudElements.MOB_EFFECTS),
+    //#endif
     BOSS_BAR(VanillaHudElements.BOSS_BAR),
     SLEEP(VanillaHudElements.SLEEP),
     DEMO_TIMER(VanillaHudElements.DEMO_TIMER),
@@ -45,7 +30,7 @@ enum class HudRenderLayer(val mcValue: Identifier) {
     TITLE_AND_SUBTITLE(VanillaHudElements.TITLE_AND_SUBTITLE),
     CHAT(VanillaHudElements.CHAT),
     PLAYER_LIST(VanillaHudElements.PLAYER_LIST),
-    SUBTITLES(VanillaHudElements.SUBTITLES);
-//#endif
+    SUBTITLES(VanillaHudElements.SUBTITLES),
+    ;
     fun toMC() = mcValue
 }

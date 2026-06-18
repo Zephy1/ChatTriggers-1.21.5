@@ -60,7 +60,8 @@ enum class TriggerType : ITriggerType {
 
     // misc
     COMMAND,
-    OTHER;
+    OTHER,
+	;
 }
 
 data class CustomTriggerType(override val name: String) : ITriggerType

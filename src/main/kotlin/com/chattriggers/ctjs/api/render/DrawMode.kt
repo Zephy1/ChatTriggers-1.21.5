@@ -1,23 +1,36 @@
 package com.chattriggers.ctjs.api.render
 
-import com.mojang.blaze3d.vertex.VertexFormat
-
-enum class DrawMode(private val mcValue: VertexFormat.DrawMode) {
-    LINES(VertexFormat.DrawMode.LINES),
-    //#if MC<=12110
-    //$$LINE_STRIP(VertexFormat.DrawMode.LINE_STRIP),
-    //#else
-    LINE_STRIP(VertexFormat.DrawMode.DEBUG_LINE_STRIP),
-    //#endif
-    TRIANGLES(VertexFormat.DrawMode.TRIANGLES),
-    TRIANGLE_STRIP(VertexFormat.DrawMode.TRIANGLE_STRIP),
-    TRIANGLE_FAN(VertexFormat.DrawMode.TRIANGLE_FAN),
-    QUADS(VertexFormat.DrawMode.QUADS);
+//#if MC<26.2
+//$$import com.mojang.blaze3d.vertex.VertexFormat
+//$$enum class DrawMode(private val mcValue: VertexFormat.Mode) {
+//$$LINES(VertexFormat.Mode.LINES),
+//$$LINE_STRIP(VertexFormat.Mode.DEBUG_LINE_STRIP),
+//$$TRIANGLES(VertexFormat.Mode.TRIANGLES),
+//$$TRIANGLE_STRIP(VertexFormat.Mode.TRIANGLE_STRIP),
+//$$TRIANGLE_FAN(VertexFormat.Mode.TRIANGLE_FAN),
+//$$QUADS(VertexFormat.Mode.QUADS),
+//#else
+import com.mojang.blaze3d.PrimitiveTopology
+enum class DrawMode(private val mcValue: PrimitiveTopology) {
+    LINES(PrimitiveTopology.LINES),
+    LINE_STRIP(PrimitiveTopology.DEBUG_LINE_STRIP),
+    TRIANGLES(PrimitiveTopology.TRIANGLES),
+    TRIANGLE_STRIP(PrimitiveTopology.TRIANGLE_STRIP),
+    TRIANGLE_FAN(PrimitiveTopology.TRIANGLE_FAN),
+    QUADS(PrimitiveTopology.QUADS),
+//#endif
+    ;
 
     fun toMC() = mcValue
 
     companion object {
         @JvmStatic
-        fun fromMC(mcValue: VertexFormat.DrawMode) = entries.first { it.mcValue == mcValue }
+        fun fromMC(
+            //#if MC<26.2
+            //$$mcValue: VertexFormat.Mode
+            //#else
+            mcValue: PrimitiveTopology
+            //#endif
+        ) = entries.first { it.mcValue == mcValue }
     }
 }

@@ -4,22 +4,20 @@ import com.chattriggers.ctjs.api.triggers.RegularTrigger
 import com.chattriggers.ctjs.api.triggers.TriggerType
 import com.chattriggers.ctjs.api.world.World
 import com.chattriggers.ctjs.internal.BoundKeyUpdater
-import com.chattriggers.ctjs.internal.mixins.GameOptionsAccessor
-import com.chattriggers.ctjs.internal.mixins.KeyBindingAccessor
+import com.chattriggers.ctjs.internal.mixins.OptionsAccessor
+import com.chattriggers.ctjs.internal.mixins.KeyMappingAccessor
 import com.chattriggers.ctjs.internal.utils.Initializer
 import com.chattriggers.ctjs.internal.utils.asMixin
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
-import net.minecraft.client.option.KeyBinding
-import net.minecraft.client.resource.language.I18n
+import net.minecraft.client.KeyMapping
+import net.minecraft.client.resources.language.I18n
 import org.apache.commons.lang3.ArrayUtils
 import java.util.concurrent.CopyOnWriteArrayList
 
-//#if MC>=12109
-import net.minecraft.util.Identifier
-//#endif
+import net.minecraft.resources.Identifier
 
 class KeyBind {
-    private val keyBinding: KeyBinding
+    private val keyBinding: KeyMapping
     private var onKeyPress: RegularTrigger? = null
     private var onKeyRelease: RegularTrigger? = null
     private var onKeyDown: RegularTrigger? = null
@@ -36,15 +34,10 @@ class KeyBind {
      */
     @JvmOverloads
     constructor(description: String, keyCode: Int, category: String = "ChatTriggers") {
-        val possibleDuplicate = Client.getMinecraft().options.allKeys.find {
-            //#if MC<=12108
-            //$$I18n.translate(it.translationKey) == I18n.translate(description) &&
-            //$$    I18n.translate(it.category) == I18n.translate(category)
-            //#else
-            I18n.translate(it.boundKeyTranslationKey) == I18n.translate(description) &&
+        val possibleDuplicate = Client.getMinecraft().options.keyMappings.find {
+            I18n.get(it.saveString()) == I18n.get(description) &&
                 // TODO: check if this is right
-                I18n.translate(it.category.id.toTranslationKey("key.category")) == I18n.translate(category)
-            //#endif
+                I18n.get(it.category.id.toLanguageKey("key.category")) == I18n.get(category)
         }
 
         if (possibleDuplicate != null) {
@@ -54,27 +47,19 @@ class KeyBind {
             }
             keyBinding = possibleDuplicate
         } else {
-            //#if MC<=12108
-            //$$if (category !in KeyBindingAccessor.getKeyCategories()) {
-            //#else
-            val categoryList = KeyBindingAccessor.Category.getCategoryList()
+            val categoryList = KeyMappingAccessor.Category.getCategoryList()
             if (!categoryList.stream().anyMatch { it.id.path.equals(category) }) {
-            //#endif
                 uniqueCategories[category] = 0
             }
             uniqueCategories[category] = uniqueCategories[category]!! + 1
-            //#if MC<=12108
-            //$$keyBinding = KeyBinding(description, keyCode, category)
-            //#else
-            val keyCategory = KeyBinding.Category.create(Identifier.of(category))
-            keyBinding = KeyBinding(description, keyCode, keyCategory)
-            //#endif
+            val keyCategory = KeyMapping.Category.register(Identifier.parse(category))
+            keyBinding = KeyMapping(description, keyCode, keyCategory)
 
             // We need to update the bound key for the KeyBind we just made to the previous binding,
             // just in case it existed last time the game was opened. This will only matter for the first
             // time launching the game, as subsequent CT loads will cause possibleDuplicate to be found.
             Client.getMinecraft().options.asMixin<BoundKeyUpdater>().ctjs_updateBoundKey(keyBinding)
-            KeyBinding.updateKeysByCode()
+            KeyMapping.resetMapping()
 
             addKeyBinding(keyBinding)
             customKeyBindings.add(keyBinding)
@@ -83,7 +68,7 @@ class KeyBind {
         keyBinds.add(this)
     }
 
-    constructor(keyBinding: KeyBinding) {
+    constructor(keyBinding: KeyMapping) {
         this.keyBinding = keyBinding
         keyBinds.add(this)
     }
@@ -118,7 +103,7 @@ class KeyBind {
     internal fun onTick() {
         if (isPressed() && !down) {
             if (keyBinding in customKeyBindings) {
-                while (keyBinding.wasPressed()) {
+                while (keyBinding.consumeClick()) {
                     // consume the key press if not built-in keybinding
                 }
             }
@@ -133,7 +118,7 @@ class KeyBind {
         }
 
         if (down && !isKeyDown()) {
-            while (keyBinding.wasPressed()) {
+            while (keyBinding.consumeClick()) {
                 // consume the rest of the key presses
             }
 
@@ -147,50 +132,42 @@ class KeyBind {
      *
      * @return whether the key is pressed
      */
-    fun isKeyDown(): Boolean = keyBinding.isPressed
+    fun isKeyDown(): Boolean = keyBinding.isDown
 
     /**
      * Returns true on the initial key press. For continuous querying use [isKeyDown].
      *
      * @return whether the key has just been pressed
      */
-    fun isPressed(): Boolean = keyBinding.asMixin<KeyBindingAccessor>().timesPressed > 0
+    fun isPressed(): Boolean = keyBinding.asMixin<KeyMappingAccessor>().clickCount > 0
 
     /**
      * Gets the description of the key.
      *
      * @return the description
      */
-    //#if MC<=12108
-    //$$fun getDescription(): String = keyBinding.translationKey
-    //#else
-    fun getDescription(): String = keyBinding.boundKeyTranslationKey
-    //#endif
+    fun getDescription(): String = keyBinding.saveString()
 
     /**
      * Gets the key code of the key.
      *
      * @return the integer key code
      */
-    fun getKeyCode(): Int = keyBinding.asMixin<KeyBindingAccessor>().boundKey.code
+    fun getKeyCode(): Int = keyBinding.asMixin<KeyMappingAccessor>().key.value
 
     /**
      * Gets the category of the key.
      *
      * @return the category
      */
-    //#if MC<=12108
-    //$$fun getCategory(): String = keyBinding.category
-    //#else
     fun getCategory(): String = keyBinding.category.id.path
-    //#endif
 
     /**
      * Sets the state of the key.
      *
      * @param pressed True to press, False to release
      */
-    fun setState(pressed: Boolean) = KeyBinding.setKeyPressed(keyBinding.asMixin<KeyBindingAccessor>().boundKey, pressed)
+    fun setState(pressed: Boolean) = KeyMapping.set(keyBinding.asMixin<KeyMappingAccessor>().key, pressed)
 
     override fun toString() =
         "KeyBind{" +
@@ -200,7 +177,7 @@ class KeyBind {
         "}"
 
     companion object : Initializer {
-        private val customKeyBindings = mutableSetOf<KeyBinding>()
+        private val customKeyBindings = mutableSetOf<KeyMapping>()
         private val uniqueCategories = mutableMapOf<String, Int>()
         private val keyBinds = CopyOnWriteArrayList<KeyBind>()
 
@@ -224,38 +201,27 @@ class KeyBind {
             keyBinds.clear()
         }
 
-        //#if MC>=12109
-        internal fun getCategoryName(category: KeyBinding.Category): String {
-            return category.id.toTranslationKey("key.category")
+        internal fun getCategoryName(category: KeyMapping.Category): String {
+            return category.id.toLanguageKey("key.category")
         }
-        //#endif
 
-        private fun removeKeyBinding(keyBinding: KeyBinding) {
-            Client.getMinecraft().options.asMixin<GameOptionsAccessor>().setAllKeys(
+        private fun removeKeyBinding(keyBinding: KeyMapping) {
+            Client.getMinecraft().options.asMixin<OptionsAccessor>().setKeyMappings(
                 ArrayUtils.removeElement(
-                    Client.getMinecraft().options.allKeys,
+                    Client.getMinecraft().options.keyMappings,
                     keyBinding,
                 ),
             )
             val category = keyBinding.category
 
-            //#if MC<=12108
-            //$$if (category in uniqueCategories) {
-            //$$    uniqueCategories[category] = uniqueCategories[category]!! - 1
-            //$$    if (uniqueCategories[category] == 0) {
-            //$$        uniqueCategories.remove(category)
-            //$$        KeyBindingAccessor.getKeyCategories().remove(category)
-            //$$    }
-            //#else
             val categoryName = getCategoryName(category)
             if (categoryName in uniqueCategories) {
                 val categoryName = getCategoryName(category)
                 uniqueCategories[categoryName] = uniqueCategories[categoryName]!! - 1
                 if (uniqueCategories[categoryName] == 0) {
                     uniqueCategories.remove(categoryName)
-                    KeyBindingAccessor.Category.getCategoryList().removeIf { it.id.equals(category.id) }
+                    KeyMappingAccessor.Category.getCategoryList().removeIf { it.id.equals(category.id) }
                 }
-            //#endif
             }
         }
 
@@ -268,21 +234,15 @@ class KeyBind {
             keyBinds.remove(keyBind)
         }
 
-        private fun addKeyBinding(keyBinding: KeyBinding): KeyBinding {
-            Client.getMinecraft().options.asMixin<GameOptionsAccessor>().setAllKeys(
+        private fun addKeyBinding(keyBinding: KeyMapping): KeyMapping {
+            Client.getMinecraft().options.asMixin<OptionsAccessor>().setKeyMappings(
                 ArrayUtils.add(
-                    Client.getMinecraft().options.allKeys,
+                    Client.getMinecraft().options.keyMappings,
                     keyBinding,
                 ),
             )
 
-            //#if MC<=12108
-            //$$val categoryMap = KeyBindingAccessor.getCategoryMap()
-            //$$val maxInt = categoryMap.values.max() ?: 0
-            //$$categoryMap[keyBinding.category] = maxInt + 1
-            //#else
-            KeyBindingAccessor.Category.getCategoryList().add(keyBinding.category)
-            //#endif
+            KeyMappingAccessor.Category.getCategoryList().add(keyBinding.category)
             return keyBinding
         }
     }

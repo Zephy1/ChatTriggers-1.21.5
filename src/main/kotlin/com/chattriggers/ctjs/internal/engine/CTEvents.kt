@@ -1,18 +1,23 @@
 package com.chattriggers.ctjs.internal.engine
 
-import com.chattriggers.ctjs.MCBlockEntity
-import com.chattriggers.ctjs.MCBlockPos
-import com.chattriggers.ctjs.MCEntity
+import net.minecraft.core.BlockPos
 import com.mojang.brigadier.CommandDispatcher
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource
 import net.fabricmc.fabric.api.event.Event
 import net.fabricmc.fabric.api.event.EventFactory
-import net.minecraft.client.gui.DrawContext
-import net.minecraft.client.gui.Drawable
-import net.minecraft.client.gui.screen.Screen
-import net.minecraft.client.util.math.MatrixStack
-import net.minecraft.network.packet.Packet
+import net.minecraft.client.gui.components.Renderable
+import net.minecraft.client.gui.screens.Screen
+import com.mojang.blaze3d.vertex.PoseStack
+import net.minecraft.network.protocol.Packet
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo
+import net.minecraft.world.entity.Entity
+import net.minecraft.world.level.block.entity.BlockEntity
+
+//#if MC<=12111
+//$$import net.minecraft.client.gui.GuiGraphics
+//#else
+import net.minecraft.client.gui.GuiGraphicsExtractor
+//#endif
 
 internal object CTEvents {
     fun interface VoidCallback {
@@ -20,23 +25,29 @@ internal object CTEvents {
     }
 
     fun interface RenderScreenCallback {
-        fun render(matrixStack: MatrixStack, mouseX: Int, mouseY: Int, drawable: Drawable, partialTicks: Float)
+        fun render(matrixStack: PoseStack, mouseX: Int, mouseY: Int, drawable: Renderable, partialTicks: Float)
     }
 
     fun interface RenderWorldCallback {
-        fun render(matrixStack: MatrixStack, partialTicks: Float)
+        fun render(matrixStack: PoseStack, partialTicks: Float)
     }
 
     fun interface RenderEntityCallback {
-        fun render(matrixStack: MatrixStack, entity: MCEntity, partialTicks: Float, ci: CallbackInfo)
+        fun render(matrixStack: PoseStack, entity: Entity, partialTicks: Float, ci: CallbackInfo)
     }
 
     fun interface RenderBlockEntityCallback {
-        fun render(matrixStack: MatrixStack, entity: MCBlockEntity, partialTicks: Float, ci: CallbackInfo)
+        fun render(matrixStack: PoseStack, entity: BlockEntity, partialTicks: Float, ci: CallbackInfo)
     }
 
     fun interface RenderHudOverlayCallback {
-        fun render(context: DrawContext, matrixStack: MatrixStack, partialTicks: Float)
+        fun render(
+            //#if MC<=12111
+            //$$context: GuiGraphics,
+            //#else
+            context: GuiGraphicsExtractor,
+            //#endif
+            matrixStack: PoseStack, partialTicks: Float)
     }
 
     fun interface PacketReceivedCallback {
@@ -60,7 +71,7 @@ internal object CTEvents {
     }
 
     fun interface BreakBlockCallback {
-        fun breakBlock(pos: MCBlockPos)
+        fun breakBlock(pos: BlockPos)
     }
 
     fun interface NetworkCommandDispatcherRegisterCallback {

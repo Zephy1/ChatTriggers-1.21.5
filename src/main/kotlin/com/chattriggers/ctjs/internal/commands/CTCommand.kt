@@ -24,18 +24,24 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType
 import com.mojang.brigadier.suggestion.Suggestions
 import com.mojang.brigadier.suggestion.SuggestionsBuilder
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource
-import net.minecraft.command.CommandSource
-import net.minecraft.text.ClickEvent
-import net.minecraft.text.HoverEvent
-import net.minecraft.text.Text
+import net.minecraft.commands.SharedSuggestionProvider
+import net.minecraft.network.chat.ClickEvent
+import net.minecraft.network.chat.HoverEvent
+import net.minecraft.network.chat.Component
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.CompletableFuture
 import kotlin.concurrent.thread
+
+//#if MC<=12111
+//$$import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument
+//$$import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal
+//#else
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands.argument
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal
+//#endif
 
 internal object CTCommand : Initializer {
     private const val idFixed = 90123 // ID for dumped chat
@@ -183,7 +189,7 @@ internal object CTCommand : Initializer {
 
         for (i in 0 until toDump) {
             val msg = ChatLib.replaceFormatting(messages[messages.size - toDump + i].formattedText)
-            TextComponent(Text.literal(msg).styled {
+            TextComponent(Component.literal(msg).withStyle {
                 it.withClickEvent(ClickEvent.CopyToClipboard(msg))
                     .withHoverEvent(
                         HoverEvent.ShowText(TextComponent("&eClick here to copy this message.")),
@@ -208,7 +214,8 @@ internal object CTCommand : Initializer {
 
     enum class DumpType(val messageList: () -> List<TextComponent>) {
         CHAT(ClientListener::chatHistory),
-        ACTION_BAR(ClientListener::actionBarHistory);
+        ACTION_BAR(ClientListener::actionBarHistory),
+		;
 
         companion object {
             fun fromString(str: String) = DumpType.entries.first { it.name.equals(str, ignoreCase = true) }
@@ -275,14 +282,14 @@ internal object CTCommand : Initializer {
 
             return modules.find {
                 it.equals(string, ignoreCase = true)
-            } ?: throw SimpleCommandExceptionType(Text.literal("No modules found with name \"$string\""))
+            } ?: throw SimpleCommandExceptionType(Component.literal("No modules found with name \"$string\""))
                 .createWithContext(reader)
         }
 
         override fun <S : Any?> listSuggestions(
-            context: CommandContext<S>?,
-            builder: SuggestionsBuilder?,
-        ): CompletableFuture<Suggestions> = CommandSource.suggestMatching(ModuleManager.cachedModules.map { it.name }, builder)
+            context: CommandContext<S>,
+            builder: SuggestionsBuilder,
+        ): CompletableFuture<Suggestions> = SharedSuggestionProvider.suggest(ModuleManager.cachedModules.map { it.name }, builder)
 
         fun getModule(ctx: CommandContext<FabricClientCommandSource>, module: String): String = ctx.getArgument(module, String::class.java)
     }

@@ -25,33 +25,22 @@ public interface ParticleAccessor {
     void setZ(double value);
 
     @Accessor
-    double getVelocityX();
+    double getXd();
 
     @Accessor
-    void setVelocityX(double value);
+    void setXd(double value);
 
     @Accessor
-    double getVelocityY();
+    double getYd();
 
     @Accessor
-    void setVelocityY(double value);
+    void setYd(double value);
 
     @Accessor
-    double getVelocityZ();
+    double getZd();
 
     @Accessor
-    void setVelocityZ(double value);
-
-    //#if MC<=12108
-    //$$@Accessor float getRed();
-    //$$@Accessor void setRed(float value);
-    //$$@Accessor float getGreen();
-    //$$@Accessor void setGreen(float value);
-    //$$@Accessor float getBlue();
-    //$$@Accessor void setBlue(float value);
-    //$$@Accessor float getAlpha();
-    //$$@Accessor void setAlpha(float value);
-    //#endif
+    void setZd(double value);
 
     @Accessor
     int getAge();
@@ -60,26 +49,26 @@ public interface ParticleAccessor {
     void setAge(int value);
 
     @Accessor
-    double getLastX();
+    double getXo();
 
     @Accessor
-    void setLastX(double value);
+    void setXo(double value);
 
     @Accessor
-    double getLastY();
+    double getYo();
 
     @Accessor
-    void setLastY(double value);
+    void setYo(double value);
 
     @Accessor
-    double getLastZ();
+    double getZo();
 
     @Accessor
-    void setLastZ(double value);
+    void setZo(double value);
 
     @Accessor
-    boolean getDead();
+    boolean getRemoved();
 
     @Accessor
-    void setDead(boolean value);
+    void setRemoved(boolean value);
 }

@@ -1,15 +1,15 @@
 package com.chattriggers.ctjs.api.world
 
 import com.chattriggers.ctjs.api.client.Client
-import com.chattriggers.ctjs.api.client.Player
+import com.chattriggers.ctjs.api.client.CTPlayer
 import com.chattriggers.ctjs.api.message.TextComponent
 
 object Server {
     @JvmStatic
-    fun toMC() = Client.getMinecraft().currentServerEntry
+    fun toMC() = Client.getMinecraft().currentServer
 
     @JvmStatic
-    fun isSingleplayer(): Boolean = Client.getMinecraft().isInSingleplayer
+    fun isSingleplayer(): Boolean = Client.getMinecraft().isLocalServer
 
     /**
      * Gets the current server's IP, or "localhost" if the player
@@ -19,10 +19,10 @@ object Server {
      */
     @JvmStatic
     fun getIP(): String {
-        if (isSingleplayer())
+        if (isSingleplayer()) {
             return "localhost"
-
-        return toMC()?.address ?: ""
+        }
+        return toMC()?.ip ?: ""
     }
 
     /**
@@ -46,7 +46,7 @@ object Server {
     @JvmStatic
     fun getMOTD(): String {
         if (isSingleplayer()) return "SinglePlayer"
-        return toMC()?.label?.let { TextComponent(it) }?.formattedText ?: ""
+        return toMC()?.motd?.let { TextComponent(it) }?.formattedText ?: ""
     }
 
     /**
@@ -61,11 +61,11 @@ object Server {
             return 5L
         }
 
-        val player = Player.toMC() ?: return -1L
+        val player = CTPlayer.toMC() ?: return -1L
 
         return Client
             .getConnection()
-            ?.getPlayerListEntry(player.uuid)
+            ?.getPlayerInfo(player.uuid)
             ?.latency
             ?.toLong()
             ?: toMC()

@@ -1,10 +1,19 @@
 package com.chattriggers.ctjs.api.render
 
 import com.chattriggers.ctjs.api.vec.Vec2f
-import net.minecraft.client.gui.DrawContext
+
+//#if MC<=12111
+//$$import net.minecraft.client.gui.GuiGraphics
+//#else
+import net.minecraft.client.gui.GuiGraphicsExtractor
+//#endif
 
 class Rectangle(
-    private val drawContext: DrawContext,
+    //#if MC<=12111
+    //$$private val drawContext: GuiGraphics,
+    //#else
+    private val drawContext: GuiGraphicsExtractor,
+    //#endif
     private var color: Long,
     private var x: Float,
     private var y: Float,

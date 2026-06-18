@@ -1,9 +1,14 @@
 package com.chattriggers.ctjs.api.inventory.action
 
 import com.chattriggers.ctjs.api.client.Client
-import com.chattriggers.ctjs.api.client.Player
+import com.chattriggers.ctjs.api.client.CTPlayer
 import com.chattriggers.ctjs.api.inventory.Inventory
-import net.minecraft.screen.slot.SlotActionType
+
+//#if MC<=12111
+//$$import net.minecraft.world.inventory.ClickType
+//#else
+import net.minecraft.world.inventory.ContainerInput
+//#endif
 
 abstract class Action(var slot: Int, var windowId: Int) {
     fun setSlot(slot: Int) = apply {
@@ -16,14 +21,27 @@ abstract class Action(var slot: Int, var windowId: Int) {
 
     internal abstract fun complete()
 
-    protected fun doClick(button: Int, mode: SlotActionType) {
-        Client.getMinecraft().interactionManager?.clickSlot(
-            windowId,
-            slot,
-            button,
-            mode,
-            Player.toMC(),
-        )
+    protected fun doClick(
+        button: Int,
+        //#if MC<=12111
+        //$$mode: ClickType,
+        //#else
+        mode: ContainerInput,
+        //#endif
+    ) {
+        CTPlayer.toMC()?.let {
+            //#if MC<=12111
+            //$$Client.getMinecraft().gameMode?.handleInventoryMouseClick(
+            //#else
+            Client.getMinecraft().gameMode?.handleContainerInput(
+            //#endif
+                windowId,
+                slot,
+                button,
+                mode,
+                it,
+            )
+        }
     }
 
     companion object {
@@ -51,6 +69,7 @@ abstract class Action(var slot: Int, var windowId: Int) {
         CLICK,
         DRAG,
         KEY,
-        DROP;
+        DROP,
+		;
     }
 }

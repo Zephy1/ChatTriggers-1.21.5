@@ -1,20 +1,20 @@
 package com.chattriggers.ctjs.api.inventory.nbt
 
-import com.chattriggers.ctjs.MCNbtBase
-import com.chattriggers.ctjs.MCNbtCompound
-import com.chattriggers.ctjs.internal.mixins.NbtCompoundAccessor
+import com.chattriggers.ctjs.internal.mixins.CompoundTagAccessor
 import com.chattriggers.ctjs.internal.utils.asMixin
-import net.minecraft.nbt.NbtByteArray
-import net.minecraft.nbt.NbtIntArray
-import net.minecraft.nbt.NbtLongArray
+import net.minecraft.nbt.ByteArrayTag
+import net.minecraft.nbt.CompoundTag
+import net.minecraft.nbt.IntArrayTag
+import net.minecraft.nbt.LongArrayTag
+import net.minecraft.nbt.Tag
 import org.mozilla.javascript.NativeObject
 
-class NBTTagCompound(override val mcValue: MCNbtCompound) : NBTBase(mcValue) {
-    val tagMap: Map<String, MCNbtBase>
-        get() = mcValue.asMixin<NbtCompoundAccessor>().entries
+class NBTTagCompound(override val mcValue: CompoundTag) : NBTBase(mcValue) {
+    val tagMap: Map<String, Tag>
+        get() = mcValue.asMixin<CompoundTagAccessor>().tags
 
     val keySet: Set<String>
-        get() = mcValue.keys
+        get() = mcValue.keySet()
 
     enum class NBTDataType {
         BYTE,
@@ -29,7 +29,8 @@ class NBTTagCompound(override val mcValue: MCNbtCompound) : NBTBase(mcValue) {
         LONG_ARRAY,
         BOOLEAN,
         COMPOUND_TAG,
-        TAG_LIST;
+        TAG_LIST,
+		;
     }
 
     fun getTag(key: String): NBTBase? = mcValue.get(key)?.let(::fromMC)
@@ -77,21 +78,21 @@ class NBTTagCompound(override val mcValue: MCNbtCompound) : NBTBase(mcValue) {
             }
             NBTDataType.BYTE_ARRAY -> {
                 if (mcValue.contains(key)) {
-                    (tagMap[key] as NbtByteArray).byteArray
+                    (tagMap[key] as ByteArrayTag).asByteArray
                 } else {
                     null
                 }
             }
             NBTDataType.INT_ARRAY -> {
                 if (mcValue.contains(key)) {
-                    (tagMap[key] as NbtIntArray).intArray
+                    (tagMap[key] as IntArrayTag).asIntArray
                 } else {
                     null
                 }
             }
             NBTDataType.LONG_ARRAY -> {
                 if (mcValue.contains(key)) {
-                    (tagMap[key] as NbtLongArray).longArray
+                    (tagMap[key] as LongArrayTag).asLongArray
                 } else {
                     null
                 }
@@ -106,7 +107,7 @@ class NBTTagCompound(override val mcValue: MCNbtCompound) : NBTBase(mcValue) {
 
     fun setNBTBase(key: String, value: NBTBase) = setNBTBase(key, value.toMC())
 
-    fun setNBTBase(key: String, value: MCNbtBase) = apply {
+    fun setNBTBase(key: String, value: Tag) = apply {
         mcValue.put(key, value)
     }
 
@@ -157,7 +158,7 @@ class NBTTagCompound(override val mcValue: MCNbtCompound) : NBTBase(mcValue) {
     operator fun set(key: String, value: Any) = apply {
         when (value) {
             is NBTBase -> setNBTBase(key, value)
-            is MCNbtBase -> setNBTBase(key, value)
+            is Tag -> setNBTBase(key, value)
             is Byte -> setByte(key, value)
             is Short -> setShort(key, value)
             is Int -> setInteger(key, value)

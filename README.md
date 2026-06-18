@@ -21,7 +21,7 @@ ChatTriggers (CT) is a framework for Minecraft that enables live scripting and c
 
 With CT, you have all the power of a modding environment with the benefit of an easy-to-use language and the ability to reload your scripts without restarting the game. CT also provides a way to [define your own Mixins](https://github.com/ChatTriggers/ctjs/wiki/Dynamic-Mixins)!
 
-CT is currently written for Fabric 1.21.5. See [this repo](https://github.com/ChatTriggers/ChatTriggers) for the Forge 1.8.9 version.
+CT is currently written for Fabric 1.21.11-26.2. See [this repo](https://github.com/ChatTriggers/ChatTriggers) for the Forge 1.8.9 version.
 
 ### Examples
 

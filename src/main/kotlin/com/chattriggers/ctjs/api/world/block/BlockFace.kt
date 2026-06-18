@@ -2,8 +2,8 @@ package com.chattriggers.ctjs.api.world.block
 
 import com.chattriggers.ctjs.api.CTWrapper
 import com.chattriggers.ctjs.api.vec.Vec3i
-import net.minecraft.util.StringIdentifiable
-import net.minecraft.util.math.Direction
+import net.minecraft.util.StringRepresentable
+import net.minecraft.core.Direction
 import java.util.function.Predicate
 
 enum class BlockFace(
@@ -12,13 +12,14 @@ enum class BlockFace(
     val axis: Axis,
     val directionVec: Vec3i,
     override val mcValue: Direction
-) : StringIdentifiable, CTWrapper<Direction> {
+) : StringRepresentable, CTWrapper<Direction> {
     DOWN(1, AxisDirection.NEGATIVE, Axis.Y, Vec3i(0, -1, 0), Direction.DOWN),
     UP(0, AxisDirection.POSITIVE, Axis.Y, Vec3i(0, 1, 0), Direction.UP),
     NORTH(3, AxisDirection.NEGATIVE, Axis.Z, Vec3i(0, 0, -1), Direction.NORTH),
     SOUTH(2, AxisDirection.POSITIVE, Axis.Z, Vec3i(0, 0, 1), Direction.SOUTH),
     WEST(5, AxisDirection.NEGATIVE, Axis.X, Vec3i(-1, 0, 0), Direction.WEST),
-    EAST(4, AxisDirection.POSITIVE, Axis.X, Vec3i(1, 0, 0), Direction.EAST);
+    EAST(4, AxisDirection.POSITIVE, Axis.X, Vec3i(1, 0, 0), Direction.EAST),
+    ;
 
     fun getOpposite() = entries[oppositeIndex]
 
@@ -60,11 +61,12 @@ enum class BlockFace(
         else -> throw IllegalStateException("Cannot rotate $this around z-axis")
     }
 
-    override fun asString() = name.lowercase()
+    override fun getSerializedName() = name.lowercase()
 
     enum class Plane : Predicate<BlockFace>, Iterable<BlockFace> {
         HORIZONTAL,
-        VERTICAL;
+        VERTICAL,
+		;
 
         override fun test(t: BlockFace) = t.axis.plane == this
 
@@ -81,7 +83,8 @@ enum class BlockFace(
         override val mcValue: Direction.AxisDirection,
     ) : CTWrapper<Direction.AxisDirection> {
         POSITIVE(1, Direction.AxisDirection.POSITIVE),
-        NEGATIVE(-1, Direction.AxisDirection.NEGATIVE);
+        NEGATIVE(-1, Direction.AxisDirection.NEGATIVE),
+		;
 
         companion object {
             @JvmStatic
@@ -95,10 +98,11 @@ enum class BlockFace(
     enum class Axis(
         val plane: Plane,
         override val mcValue: Direction.Axis,
-    ) : Predicate<BlockFace>, StringIdentifiable, CTWrapper<Direction.Axis> {
+    ) : Predicate<BlockFace>, StringRepresentable, CTWrapper<Direction.Axis> {
         X(Plane.HORIZONTAL, Direction.Axis.X),
         Y(Plane.VERTICAL, Direction.Axis.Y),
-        Z(Plane.HORIZONTAL, Direction.Axis.Z);
+        Z(Plane.HORIZONTAL, Direction.Axis.Z),
+		;
 
         fun isHorizontal() = plane == Plane.HORIZONTAL
 
@@ -106,7 +110,7 @@ enum class BlockFace(
 
         override fun test(t: BlockFace) = t.axis == this
 
-        override fun asString() = name.lowercase()
+        override fun getSerializedName() = name.lowercase()
 
         companion object {
             @JvmStatic

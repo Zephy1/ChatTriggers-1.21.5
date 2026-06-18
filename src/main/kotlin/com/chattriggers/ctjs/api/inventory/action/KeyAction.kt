@@ -1,6 +1,10 @@
 package com.chattriggers.ctjs.api.inventory.action
 
-import net.minecraft.screen.slot.SlotActionType
+//#if MC<=12111
+//$$import net.minecraft.world.inventory.ClickType
+//#else
+import net.minecraft.world.inventory.ContainerInput
+//#endif
 
 class KeyAction(slot: Int, windowId: Int) : Action(slot, windowId) {
     private var key: Int = -1
@@ -18,6 +22,10 @@ class KeyAction(slot: Int, windowId: Int) : Action(slot, windowId) {
     }
 
     override fun complete() {
-        doClick(key, SlotActionType.SWAP)
+        //#if MC<=12111
+        //$$doClick(key, ClickType.SWAP)
+        //#else
+        doClick(key, ContainerInput.SWAP)
+        //#endif
     }
 }

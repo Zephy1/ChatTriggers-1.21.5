@@ -1,23 +1,23 @@
 package com.chattriggers.ctjs.api.inventory
 
-import com.chattriggers.ctjs.MCInventory
 import com.chattriggers.ctjs.api.inventory.action.ClickAction
 import com.chattriggers.ctjs.api.inventory.action.DragAction
 import com.chattriggers.ctjs.api.inventory.action.DropAction
 import com.chattriggers.ctjs.api.message.TextComponent
-import net.minecraft.client.gui.screen.ingame.HandledScreen
-import net.minecraft.util.Nameable
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen
+import net.minecraft.world.Container
+import net.minecraft.world.Nameable
 
 class Inventory {
-    val inventory: MCInventory?
-    val screen: HandledScreen<*>?
+    val inventory: Container?
+    val screen: AbstractContainerScreen<*>?
 
-    constructor(inventory: MCInventory) {
+    constructor(inventory: Container) {
         this.inventory = inventory
         this.screen = null
     }
 
-    constructor(container: HandledScreen<*>) {
+    constructor(container: AbstractContainerScreen<*>) {
         this.inventory = null
         this.screen = container
     }
@@ -29,17 +29,17 @@ class Inventory {
      *
      * @return the size of the Inventory
      */
-    val size: Int get() = inventory?.size() ?: screen!!.screenHandler.slots.size
+    val size: Int get() = inventory?.containerSize ?: screen!!.menu.slots.size
 
     /**
      * Gets the item in any slot, starting from 0.
      *
      * @param slot the slot index
-     * @return the [Item] in that slot, or null if there is no item
+     * @return the [CTItem] in that slot, or null if there is no item
      */
-    fun getStackInSlot(slot: Int): Item? {
-        val stack = inventory?.getStack(slot) ?: screen!!.screenHandler.getSlot(slot).stack
-        return stack?.let(Item::fromMC)
+    fun getStackInSlot(slot: Int): CTItem? {
+        val stack = inventory?.getItem(slot) ?: screen!!.menu.getSlot(slot).item
+        return stack.let(CTItem::fromMC)
     }
 
     /**
@@ -48,7 +48,7 @@ class Inventory {
      *
      * @return the window id
      */
-    fun getWindowId(): Int = screen?.screenHandler?.syncId ?: -1
+    fun getWindowId(): Int = screen?.menu?.containerId ?: -1
 
     /**
      * Checks if an item can be shift clicked into a certain slot, i.e. coal into the bottom of a furnace.
@@ -57,10 +57,10 @@ class Inventory {
      * @param item the item for checking
      * @return whether it can be shift clicked in
      */
-    fun isItemValidForSlot(slot: Int, item: Item) = inventory?.isValid(slot, item.mcValue) ?: true
+    fun isItemValidForSlot(slot: Int, item: CTItem) = inventory?.canPlaceItem(slot, item.mcValue) ?: true
 
     /**
-     * @return a list of the [Item]s in an inventory
+     * @return a list of the [CTItem]s in an inventory
      */
     fun getItems() = (0 until size).map(::getStackInSlot)
 
@@ -70,7 +70,7 @@ class Inventory {
      * @param item the item to check for
      * @return whether the inventory contains the item
      */
-    fun contains(item: Item) = getItems().contains(item)
+    fun contains(item: CTItem) = getItems().contains(item)
 
     /**
      * Checks whether the inventory contains an item with ID.
@@ -87,7 +87,7 @@ class Inventory {
      * @param item the item to check for
      * @return the index of the given item
      */
-    fun indexOf(item: Item) = getItems().indexOf(item)
+    fun indexOf(item: CTItem) = getItems().indexOf(item)
 
     /**
      * Gets the index of any item in the inventory with matching ID, and returns the slot number.
@@ -145,7 +145,7 @@ class Inventory {
     fun drag(type: String, vararg slots: Int) = apply {
         DragAction(-999, getWindowId()).run {
             setStage(DragAction.Stage.BEGIN)
-                .setClickType(DragAction.ClickType.valueOf(type.uppercase()))
+                .setClickType(CTClickType.valueOf(type.uppercase()))
                 .complete()
 
             setStage(DragAction.Stage.SLOT)

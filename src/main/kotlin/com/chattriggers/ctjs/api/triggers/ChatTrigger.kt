@@ -259,7 +259,8 @@ class ChatTrigger(method: Any, type: ITriggerType) : Trigger(method, type) {
     private enum class Parameter(vararg names: String) {
         CONTAINS("<c>", "<contains>", "c", "contains"),
         START("<s>", "<start>", "s", "start"),
-        END("<e>", "<end>", "e", "end");
+        END("<e>", "<end>", "e", "end"),
+		;
 
         var names: List<String> = names.asList()
 

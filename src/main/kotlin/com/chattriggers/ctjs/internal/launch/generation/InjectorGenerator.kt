@@ -168,7 +168,6 @@ internal abstract class InjectorGenerator(protected val ctx: GenerationContext, 
                     Descriptor.Primitive.LONG -> invokevirtual(java.lang.Number::class, "longValue", long)
                     Descriptor.Primitive.FLOAT -> invokevirtual(java.lang.Number::class, "floatValue", float)
                     Descriptor.Primitive.DOUBLE -> invokevirtual(java.lang.Number::class, "doubleValue", double)
-                    else -> throw IllegalStateException("Unexpected primitive type: $descriptor")
                 }
             }
             else -> checkcast(descriptor.toMappedType())

@@ -4,18 +4,19 @@ import com.chattriggers.ctjs.api.client.Client
 import com.chattriggers.ctjs.api.message.TextComponent
 import com.chattriggers.ctjs.api.triggers.RegularTrigger
 import com.chattriggers.ctjs.api.triggers.TriggerType
-import com.chattriggers.ctjs.internal.mixins.ClickableWidgetAccessor
+import com.chattriggers.ctjs.internal.mixins.AbstractWidgetAccessor
 import com.chattriggers.ctjs.internal.utils.asMixin
 import gg.essential.universal.UKeyboard
 import gg.essential.universal.UMatrixStack
 import gg.essential.universal.UScreen
 import net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents
-import net.minecraft.client.gui.DrawContext
-import net.minecraft.client.gui.widget.ButtonWidget
+import net.minecraft.client.gui.components.Button
 
-//#if MC<=12105
-//$$import net.minecraft.client.gui.tooltip.Tooltip
-//#endif
+//#if MC<=12111
+//$$import net.minecraft.client.gui.GuiGraphics
+//#else
+import net.minecraft.client.gui.GuiGraphicsExtractor
+//#endifg
 
 class Gui @JvmOverloads constructor(
     title: TextComponent = TextComponent(""),
@@ -33,20 +34,18 @@ class Gui @JvmOverloads constructor(
     private var mouseX = 0
     private var mouseY = 0
 
-    private val buttons = mutableMapOf<Int, ButtonWidget>()
+    private val buttons = mutableMapOf<Int, Button>()
     private var nextButtonId = 0
     private var doesPauseGame = false
 
     fun open() {
         Client.currentGui.set(this)
     }
-
-    override fun close() {
+    fun close() {
         Client.currentGui.set(null)
-
     }
 
-    fun isOpen(): Boolean = Client.getMinecraft().currentScreen === this
+    fun isOpen(): Boolean = Client.currentGui.get() === this
 
     /**
      * Registers a method to be run while gui is open.
@@ -220,17 +219,12 @@ class Gui @JvmOverloads constructor(
     override fun initScreen(width: Int, height: Int) {
         super.initScreen(width, height)
 
-        //#if MC<=12108
-        //$$ScreenMouseEvents.afterMouseScroll(this).register { _, x, y, _, dy ->
-        //$$    onScroll?.trigger(arrayOf(x, y, dy))
-        //#else
         ScreenMouseEvents.afterMouseScroll(this).register { _, x, y, _, dy, _ ->
             onScroll?.trigger(arrayOf(x, y, dy))
             false
-        //#endif
         }
 
-        buttons.values.forEach(::addDrawableChild)
+        buttons.values.forEach(::addRenderableWidget)
         onOpened?.trigger(arrayOf(this))
     }
 
@@ -240,6 +234,7 @@ class Gui @JvmOverloads constructor(
     override fun onScreenClose() {
         super.onScreenClose()
         onClosed?.trigger(arrayOf(this))
+        Client.currentGui.set(null)
     }
 
     /**
@@ -285,9 +280,13 @@ class Gui @JvmOverloads constructor(
         super.onDrawScreen(matrixStack, mouseX, mouseY, partialTicks)
 
         @Suppress("UNCHECKED_CAST")
-        val drawContexts = drawContextsField.get(this) as List<DrawContext>
+        //#if MC<=12111
+        //$$val drawContexts = drawContextsField.get(this) as List<GuiGraphics>
+        //#else
+        val drawContexts = drawContextsField.get(this) as List<GuiGraphicsExtractor>
+        //#endif
         val currentDrawContext = drawContexts.last()
-        RenderUtils.pushMatrix(UMatrixStack(currentDrawContext.matrices))
+        RenderUtils.pushMatrix(UMatrixStack(currentDrawContext.pose()))
 
         GUIRenderer.partialTicks = partialTicks
 
@@ -316,7 +315,7 @@ class Gui @JvmOverloads constructor(
      * Internal method to run trigger. Not meant for public use
      */
 
-    override fun shouldPause() = doesPauseGame
+    override fun isPauseScreen() = doesPauseGame
 
     fun setDoesPauseGame(doesPauseGame: Boolean) = apply {
         this.doesPauseGame = doesPauseGame
@@ -328,10 +327,10 @@ class Gui @JvmOverloads constructor(
      * @param button the button to add
      * @return the button ID for use in actionPerformed
      */
-    fun addButton(button: ButtonWidget): Int {
+    fun addButton(button: Button): Int {
         val id = nextButtonId++
         buttons[id] = button
-        addDrawableChild(button)
+        addRenderableWidget(button)
         return id
     }
 
@@ -354,11 +353,11 @@ class Gui @JvmOverloads constructor(
         buttonText: TextComponent,
     ): Int {
         val id = nextButtonId++
-        val button = ButtonWidget.builder(buttonText) {
+        val button = Button.builder(buttonText) {
             onActionPerformed?.trigger(arrayOf(id))
-        }.dimensions(x, y, width, height).build()
+        }.bounds(x, y, width, height).build()
         buttons[id] = button
-        addDrawableChild(button)
+        addRenderableWidget(button)
         return id
     }
 
@@ -372,12 +371,12 @@ class Gui @JvmOverloads constructor(
      * @return the Gui for method chaining
      */
     fun removeButton(buttonId: Int) = apply {
-        remove(buttons[buttonId] ?: return@apply)
+        removeWidget(buttons[buttonId] ?: return@apply)
         buttons.remove(buttonId)
     }
 
     fun clearButtons() = apply {
-        buttons.values.forEach(::remove)
+        buttons.values.forEach(::removeWidget)
         buttons.clear()
     }
 
@@ -430,7 +429,7 @@ class Gui @JvmOverloads constructor(
      * @return the Gui for method chaining
      */
     fun setButtonHeight(buttonId: Int, height: Int) = apply {
-        buttons[buttonId]?.asMixin<ClickableWidgetAccessor>()?.setHeight(height)
+        buttons[buttonId]?.asMixin<AbstractWidgetAccessor>()?.setHeight(height)
     }
 
     fun getButtonX(buttonId: Int): Int = buttons[buttonId]?.x ?: 0
@@ -499,9 +498,7 @@ class Gui @JvmOverloads constructor(
      * @param text the contents of the tooltip
      */
     fun setTooltip(text: TextComponent) = apply {
-        //#if MC<=12105
-        //$$setTooltip(Tooltip.wrapLines(Client.getMinecraft(), text))
-        //#endif
+        // TODO: was removed in 1.21.8?
     }
 
     /**

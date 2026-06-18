@@ -1,20 +1,24 @@
 package com.chattriggers.ctjs.api.client
 
-import com.chattriggers.ctjs.api.inventory.Slot
+import com.chattriggers.ctjs.api.client.Keyboard.isCtrlDown
+import com.chattriggers.ctjs.api.inventory.CTSlot
 import com.chattriggers.ctjs.api.message.TextComponent
 import com.chattriggers.ctjs.api.world.World
 import com.chattriggers.ctjs.internal.listeners.ClientListener
 import com.chattriggers.ctjs.internal.mixins.ChatScreenAccessor
-import com.chattriggers.ctjs.internal.mixins.HandledScreenAccessor
-import com.chattriggers.ctjs.internal.mixins.KeyBindingAccessor
+import com.chattriggers.ctjs.internal.mixins.AbstractContainerScreenAccessor
+import com.chattriggers.ctjs.internal.mixins.KeyMappingAccessor
 import com.chattriggers.ctjs.internal.utils.asMixin
 import com.mojang.realmsclient.RealmsMainScreen
 import gg.essential.universal.UKeyboard
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.components.ChatComponent
+import net.minecraft.client.gui.components.PlayerTabOverlay
 import net.minecraft.client.gui.screens.ChatScreen
 import net.minecraft.client.gui.screens.ConnectScreen
+import net.minecraft.client.gui.screens.Screen
 import net.minecraft.client.gui.screens.TitleScreen
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen
 import net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen
 import net.minecraft.client.multiplayer.ClientPacketListener
 import net.minecraft.client.multiplayer.ServerData
@@ -22,9 +26,8 @@ import net.minecraft.client.multiplayer.resolver.ServerAddress
 import kotlin.math.max
 import kotlin.math.roundToInt
 
-//#if MC>=12106
-import net.minecraft.text.Text
-//#endif
+import net.minecraft.network.chat.Component
+import net.minecraft.network.protocol.Packet
 
 object Client {
     internal var referenceSystemTime: Long = 0
@@ -54,6 +57,9 @@ object Client {
     @JvmStatic
     fun getConnection(): ClientPacketListener? = getMinecraft().connection
 
+    @JvmStatic
+    fun isSingleplayer(): Boolean = getMinecraft().singleplayerServer != null
+
     /**
      * Schedule's a task to run on Minecraft's main thread in [delay] ticks.
      * Defaults to the next tick.
@@ -66,7 +72,6 @@ object Client {
         ClientListener.addTask(delay, callback)
     }
 
-    //#if MC>=12110
     fun <T> synchronizedTask(task: () -> T): T {
         val mc = getMinecraft()
         if (mc.isSameThread) {
@@ -87,7 +92,6 @@ object Client {
         latch.await()
         return result!!
     }
-    //#endif
 
     /**
      * Quits the client back to the main menu.
@@ -96,17 +100,11 @@ object Client {
     @JvmStatic
     fun disconnect() {
         scheduleTask {
-            //#if MC<=12105
-            //$$World.toMC()?.disconnect()
-            //$$getMinecraft().disconnect()
-            //#else
-            World.toMC()?.disconnect(Text.empty())
-            //#endif
-
-            getMinecraft().setScreen(
+            World.toMC()?.disconnect(Component.empty())
+            currentGui.set(
                 when {
                     getMinecraft().isLocalServer -> TitleScreen()
-                    getMinecraft().getCurrentServer?.isRealm == true -> RealmsMainScreen(TitleScreen())
+                    getMinecraft().currentServer?.isRealm == true -> RealmsMainScreen(TitleScreen())
                     else -> JoinMultiplayerScreen(TitleScreen())
                 },
             )
@@ -121,7 +119,7 @@ object Client {
     @JvmOverloads
     fun connect(ip: String, port: Int = 25565) {
         scheduleTask {
-            ConnectScreen.connect(
+            ConnectScreen.startConnecting(
                 JoinMultiplayerScreen(TitleScreen()),
                 getMinecraft(),
                 ServerAddress(ip, port),
@@ -138,16 +136,24 @@ object Client {
      * @return The GuiNewChat object for the chat gui
      */
     @JvmStatic
-    fun getChatGui(): ChatComponent? = getMinecraft().inGameHud?.chatHud
+    //#if MC<26.2
+    //$$fun getChatGui(): ChatComponent = getMinecraft().gui.chat
+    //#else
+    fun getChatGui(): ChatComponent = getMinecraft().gui.hud.chat
+    //#endif
 
     @JvmStatic
-    fun isInChat(): Boolean = getMinecraft().currentScreen is ChatScreen
+    fun isInChat(): Boolean = currentGui.get() is ChatScreen
 
     @JvmStatic
-    fun getTabGui(): PlayerListHud? = getMinecraft().inGameHud?.playerListHud
+    //#if MC<26.2
+    //$$fun getTabGui(): PlayerTabOverlay = getMinecraft().gui.tabList
+    //#else
+    fun getTabGui(): PlayerTabOverlay = getMinecraft().gui.hud.tabList
+    //#endif
 
     @JvmStatic
-    fun isInTab(): Boolean = getMinecraft().options.playerListKey.isPressed
+    fun isInTab(): Boolean = getMinecraft().options.keyPlayerList.isDown
 
     /**
      * Gets whether the Minecraft window is active
@@ -156,7 +162,7 @@ object Client {
      * @return true if the game is active, false otherwise
      */
     @JvmStatic
-    fun isTabbedIn(): Boolean = getMinecraft().isWindowFocused
+    fun isTabbedIn(): Boolean = getMinecraft().isWindowActive
 
     @JvmStatic
     fun isControlDown(): Boolean = UKeyboard.isCtrlKeyDown()
@@ -168,10 +174,10 @@ object Client {
     fun isAltDown(): Boolean = UKeyboard.isAltKeyDown()
 
     @JvmStatic
-    fun getFPS(): Int = getMinecraft().currentFps
+    fun getFPS(): Int = getMinecraft().fps
 
     @JvmStatic
-    fun getVersion(): String = getMinecraft().gameVersion
+    fun getVersion(): String = getMinecraft().launchedVersion
 
     @JvmStatic
     fun getMaxMemory(): Long = Runtime.getRuntime().maxMemory()
@@ -189,10 +195,13 @@ object Client {
     fun getSystemTime(): Long = (System.nanoTime() - referenceSystemTime) / 1_000_000
 
     @JvmStatic
-    fun getMouseX() = getMinecraft().mouse.x * getMinecraft().window.scaledWidth / max(1, getMinecraft().window.scaledWidth)
+    fun getTime(): Long = System.nanoTime() / 1_000_000
 
     @JvmStatic
-    fun getMouseY() = getMinecraft().mouse.y * getMinecraft().window.scaledHeight / max(1, getMinecraft().window.scaledHeight)
+    fun getMouseX() = getMinecraft().mouseHandler.xpos() * getMinecraft().window.guiScaledWidth / max(1, getMinecraft().window.guiScaledWidth)
+
+    @JvmStatic
+    fun getMouseY() = getMinecraft().mouseHandler.ypos() * getMinecraft().window.guiScaledHeight / max(1, getMinecraft().window.guiScaledHeight)
 
     @JvmStatic
     fun isInGui(): Boolean = currentGui.get() != null
@@ -205,8 +214,8 @@ object Client {
     @JvmStatic
     fun getCurrentChatMessage(): String {
         return if (isInChat()) {
-            val chatGui = getMinecraft().currentScreen as ChatScreen
-            chatGui.asMixin<ChatScreenAccessor>().chatField.text
+            val chatGui = currentGui.get() as ChatScreen
+            chatGui.asMixin<ChatScreenAccessor>().input.value
         } else {
             ""
         }
@@ -220,14 +229,10 @@ object Client {
     @JvmStatic
     fun setCurrentChatMessage(message: String) {
         if (isInChat()) {
-            val chatGui = getMinecraft().currentScreen as ChatScreen
-            chatGui.asMixin<ChatScreenAccessor>().chatField.text = message
+            val chatGui = currentGui.get() as ChatScreen
+            chatGui.asMixin<ChatScreenAccessor>().input.value = message
         } else {
-            //#if MC<=12108
-            //$$currentGui.set(ChatScreen(message))
-            //#else
             currentGui.set(ChatScreen(message, false))
-            //#endif
         }
     }
 
@@ -247,15 +252,20 @@ object Client {
      */
     @JvmStatic
     fun showTitle(title: String?, subtitle: String?, fadeIn: Int, time: Int, fadeOut: Int) {
-        getMinecraft().inGameHud.apply {
-            setTitleTicks(fadeIn, time, fadeOut)
-            if (title != null) {
-                setTitle(TextComponent(title))
+        //#if MC<26.2
+        //$$getMinecraft().gui
+        //#else
+        getMinecraft().gui.hud
+        //#endif
+            .apply {
+                setTimes(fadeIn, time, fadeOut)
+                if (title != null) {
+                    setTitle(TextComponent(title))
+                }
+                if (subtitle != null) {
+                    setSubtitle(TextComponent(subtitle))
+                }
             }
-            if (subtitle != null) {
-                setSubtitle(TextComponent(subtitle))
-            }
-        }
     }
 
     /**
@@ -266,14 +276,14 @@ object Client {
     @JvmStatic
     @JvmOverloads
     fun copy(text: String = "") {
-        getMinecraft().keyboard.clipboard = text
+        getMinecraft().keyboardHandler.clipboard = text
     }
 
     /**
      * Get the string currently on the clipboard
      */
     @JvmStatic
-    fun paste(): String = getMinecraft().keyboard.clipboard
+    fun paste(): String = getMinecraft().keyboardHandler.clipboard
 
     /**
      * Get the [KeyBinding] from an already existing Minecraft KeyBinding, otherwise, returns null.
@@ -288,9 +298,9 @@ object Client {
             it.getKeyCode() == keyCode
         } ?: getMinecraft()
             .options
-            .allKeys
+            .keyMappings
             .find {
-                it.asMixin<KeyBindingAccessor>().boundKey.code == keyCode
+                asMixin<KeyMappingAccessor>().key.value == keyCode
             }?.let(::KeyBind)
     }
 
@@ -320,12 +330,8 @@ object Client {
     fun getKeyBindFromDescription(description: String): KeyBind? {
         return KeyBind.getKeyBinds()
             .find { it.getDescription() == description }
-            ?: getMinecraft().options.allKeys
-                //#if MC<=12108
-                //$$.find { it.translationKey == description }
-                //#else
-                .find { it.boundKeyTranslationKey == description }
-                //#endif
+            ?: getMinecraft().options.keyMappings
+                .find { it.saveString() == description }
                 ?.let(::KeyBind)
     }
 
@@ -342,23 +348,31 @@ object Client {
          *
          * @return the Minecraft gui
          */
-        fun get(): Screen? = getMinecraft().currentScreen
+        //#if MC<26.2
+        //$$fun get(): Screen? = getMinecraft().screen
+        //#else
+        fun get(): Screen? = getMinecraft().gui.screen()
+        //#endif
 
         fun set(screen: Screen?) {
             scheduleTask {
-                getMinecraft().setScreen(screen)
+                //#if MC<26.2
+                //$$getMinecraft().setScreen(screen)
+                //#else
+                getMinecraft().gui.setScreen(screen)
+                //#endif
             }
         }
 
         /**
          * Gets the slot under the mouse in the current gui, if one exists.
          *
-         * @return the [Slot] under the mouse
+         * @return the [CTSlot] under the mouse
          */
-        fun getSlotUnderMouse(): Slot? {
+        fun getSlotUnderMouse(): CTSlot? {
             val screen: Screen? = get()
-            return if (screen is HandledScreen<*>) {
-                screen.asMixin<HandledScreenAccessor>().invokeGetSlotAt(getMouseX(), getMouseY())?.let(::Slot)
+            return if (screen is AbstractContainerScreen<*>) {
+                screen.asMixin<AbstractContainerScreenAccessor>().invokeGetHoveredSlot(getMouseX(), getMouseY())?.let(::CTSlot)
             } else {
                 null
             }
@@ -368,19 +382,19 @@ object Client {
          * Closes the currently open gui
          */
         fun close() {
-            scheduleTask { Player.toMC()?.closeScreen() }
+            scheduleTask { CTPlayer.toMC()?.clientSideCloseContainer() }
         }
     }
 
     class CameraWrapper {
-        //#if MC<=12110
-        //$$fun getX(): Double = getMinecraft().gameRenderer.camera.pos.x
-        //$$fun getY(): Double = getMinecraft().gameRenderer.camera.pos.y
-        //$$fun getZ(): Double = getMinecraft().gameRenderer.camera.pos.z
+        //#if MC<26.2
+        //$$fun getX(): Double = getMinecraft().gameRenderer.mainCamera.position().x
+        //$$fun getY(): Double = getMinecraft().gameRenderer.mainCamera.position().y
+        //$$fun getZ(): Double = getMinecraft().gameRenderer.mainCamera.position().z
         //#else
-        fun getX(): Double = getMinecraft().gameRenderer.camera.cameraPos.x
-        fun getY(): Double = getMinecraft().gameRenderer.camera.cameraPos.y
-        fun getZ(): Double = getMinecraft().gameRenderer.camera.cameraPos.z
+        fun getX(): Double = getMinecraft().gameRenderer.mainCamera().position().x
+        fun getY(): Double = getMinecraft().gameRenderer.mainCamera().position().y
+        fun getZ(): Double = getMinecraft().gameRenderer.mainCamera().position().z
         //#endif
     }
 }

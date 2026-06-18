@@ -2,9 +2,14 @@ package com.chattriggers.ctjs.api.render
 
 import com.chattriggers.ctjs.api.message.ChatLib
 import com.chattriggers.ctjs.internal.utils.getOption
-import net.minecraft.client.gui.DrawContext
-import net.minecraft.text.Style
+import net.minecraft.network.chat.Style
 import org.mozilla.javascript.NativeObject
+
+//#if MC<=12111
+//$$import net.minecraft.client.gui.GuiGraphics
+//#else
+import net.minecraft.client.gui.GuiGraphicsExtractor
+//#endif
 
 class Text {
     private lateinit var string: String
@@ -162,27 +167,30 @@ class Text {
 
     @JvmOverloads
     fun draw(
-        ctx: DrawContext,
+        //#if MC<=12111
+        //$$drawContext: GuiGraphics,
+        //#else
+        drawContext: GuiGraphicsExtractor,
+        //#endif
         x: Int? = null,
         y: Int? = null
     ) = apply {
-        draw(ctx, x, y, null, null)
+        draw(drawContext, x, y, null, null)
     }
 
     internal fun draw(
-        ctx: DrawContext,
+        //#if MC<=12111
+        //$$drawContext: GuiGraphics,
+        //#else
+        drawContext: GuiGraphicsExtractor,
+        //#endif
         x: Int? = null,
         y: Int? = null,
         backgroundX: Int? = null,
         backgroundWidth: Int? = null
     ) = apply {
-        //#if MC<=12105
-        //$$ctx.matrices.push()
-        //$$ctx.matrices.scale(scale, scale, 1f)
-        //#else
-        ctx.matrices.pushMatrix()
-        ctx.matrices.scale(scale, scale)
-        //#endif
+        drawContext.pose().pushMatrix()
+        drawContext.pose().scale(scale, scale)
 
         var longestLine = lines.maxOf { RenderUtils.getStringWidth(it) * scale }
         if (maxWidth != 0) {
@@ -199,7 +207,7 @@ class Text {
 
         if (background) {
             val ox = backgroundX ?: xHolder
-            ctx.fill(
+            drawContext.fill(
                 ox,
                 yHolder,
                 ox + (backgroundWidth ?: width),
@@ -210,8 +218,12 @@ class Text {
 
         for (i in 0 until maxLines) {
             if (i >= lines.size) break
-            ctx.drawText(
-                RenderUtils.getFontRenderer(),
+            //#if MC<=12111
+            //$$drawContext.drawString(
+            //#else
+            drawContext.text(
+            //#endif
+                RenderUtils.getTextRenderer(),
                 lines[i],
                 xHolder,
                 yHolder,
@@ -220,11 +232,7 @@ class Text {
             )
             yHolder += 10
         }
-        //#if MC<=12105
-        //$$ctx.matrices.pop()
-        //#else
-        ctx.matrices.popMatrix()
-        //#endif
+        drawContext.pose().popMatrix()
     }
 
     private fun updateFormatting() {
@@ -241,9 +249,9 @@ class Text {
             if (maxWidth > 0) {
                 lines.addAll(
                     RenderUtils
-                        .getFontRenderer()
-                        .textHandler
-                        .wrapLines(line, maxWidth, Style.EMPTY)
+                        .getTextRenderer()
+                        .splitter
+                        .splitLines(line, maxWidth, Style.EMPTY)
                         .map { it.string },
                 )
             } else {
@@ -263,6 +271,7 @@ class Text {
     enum class Align {
         LEFT,
         CENTER,
-        RIGHT;
+        RIGHT,
+		;
     }
 }

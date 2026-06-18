@@ -1,41 +1,41 @@
 package com.chattriggers.ctjs.api.inventory
 
-import com.chattriggers.ctjs.MCItem
 import com.chattriggers.ctjs.api.CTWrapper
 import com.chattriggers.ctjs.api.message.TextComponent
-import com.chattriggers.ctjs.api.world.block.BlockType
+import com.chattriggers.ctjs.api.world.block.CTBlockType
 import com.chattriggers.ctjs.internal.utils.toIdentifier
-import net.minecraft.item.Items
-import net.minecraft.registry.Registries
+import net.minecraft.world.item.Items
+import net.minecraft.core.registries.BuiltInRegistries
+import net.minecraft.world.item.Item
 
-class ItemType(override val mcValue: MCItem) : CTWrapper<MCItem> {
+class ItemType(override val mcValue: Item) : CTWrapper<Item> {
     init {
         require(mcValue !== Items.AIR) {
             "Can not wrap air as an ItemType"
         }
     }
 
-    constructor(itemName: String) : this(Registries.ITEM[itemName.toIdentifier()])
+    constructor(itemName: String) : this(BuiltInRegistries.ITEM.get(itemName.toIdentifier()).get().value())
 
-    constructor(id: Int) : this(Registries.ITEM[id])
+    constructor(id: Int) : this(BuiltInRegistries.ITEM.byId(id))
 
-    constructor(blockType: BlockType) : this(blockType.toMC().asItem())
+    constructor(blockType: CTBlockType) : this(blockType.toMC().asItem())
 
     fun getName(): String = getNameComponent().formattedText
 
-    fun getNameComponent(): TextComponent = TextComponent(mcValue.name)
+    fun getNameComponent(): TextComponent = TextComponent(mcValue.toString())
 
-    fun getId(): Int = MCItem.getRawId(mcValue)
+    fun getId(): Int = Item.getId(mcValue)
 
-    fun getTranslationKey(): String = mcValue.translationKey
+    fun getTranslationKey(): String = mcValue.descriptionId
 
-    fun getRegistryName(): String = Registries.ITEM.getId(mcValue).toString()
+    fun getRegistryName(): String = BuiltInRegistries.ITEM.getKey(mcValue).toString()
 
-    fun asItem(): Item = Item(this)
+    fun asItem(): CTItem = CTItem(this)
 
     companion object {
         @JvmStatic
-        fun fromMC(mcValue: MCItem): ItemType? {
+        fun fromMC(mcValue: Item): ItemType? {
             return if (mcValue === Items.AIR) {
                 null
             } else {

@@ -1,17 +1,20 @@
 package com.chattriggers.ctjs.internal.engine.module
 
-import com.chattriggers.ctjs.api.client.Player
+import com.chattriggers.ctjs.api.client.CTPlayer
 import com.chattriggers.ctjs.api.message.ChatLib
 import com.chattriggers.ctjs.api.render.GUIRenderer
+import com.chattriggers.ctjs.api.render.RenderUtils
 import com.chattriggers.ctjs.api.render.Text
-import net.minecraft.client.gui.DrawContext
-import net.minecraft.client.gui.screen.Screen
+import net.minecraft.client.gui.screens.Screen
+import net.minecraft.client.input.MouseButtonEvent
 
-//#if MC>=12109
-import net.minecraft.client.gui.Click
+//#if MC<=12111
+//$$import net.minecraft.client.gui.GuiGraphics
+//#else
+import net.minecraft.client.gui.GuiGraphicsExtractor
 //#endif
 
-object ModulesGui : Screen(net.minecraft.text.Text.literal("Modules")) {
+object ModulesGui : Screen(net.minecraft.network.chat.Component.literal("Modules")) {
     private val window = object {
         val title = Text("Modules").setScale(2f).setShadow(true)
         val exit = Text(ChatLib.addColor("&cx")).setScale(2f)
@@ -19,33 +22,39 @@ object ModulesGui : Screen(net.minecraft.text.Text.literal("Modules")) {
         var scroll = 0f
     }
 
-    override fun render(drawContext: DrawContext?, mouseX: Int, mouseY: Int, deltaTicks: Float) {
-        //#if MC<=12105
-        //$$drawContext!!.matrices.push()
+    //#if MC<=12111
+    //$$override fun render(
+    //#else
+    override fun extractRenderState(
+    //#endif
+        //#if MC<=12111
+        //$$drawContext: GuiGraphics,
         //#else
-        drawContext!!.matrices.pushMatrix()
+        drawContext: GuiGraphicsExtractor,
         //#endif
+        mouseX: Int, mouseY: Int, deltaTicks: Float) {
+        drawContext.pose().pushMatrix()
 
-        drawContext.fill(0, 0, drawContext.scaledWindowWidth, drawContext.scaledWindowHeight, 0x50000000)
-        val middle = GUIRenderer.screen.getWidth() / 2
-        val width = (GUIRenderer.screen.getWidth() - 100).coerceAtMost(500)
+        drawContext.fill(0, 0, drawContext.guiWidth(), drawContext.guiHeight(), 0x50000000)
+        val middle = RenderUtils.screen.getWidth() / 2
+        val width = (RenderUtils.screen.getWidth() - 100).coerceAtMost(500)
 
         GUIRenderer.drawRect(
             drawContext,
             0f,
             0f,
-            GUIRenderer.screen.getWidth().toFloat(),
-            GUIRenderer.screen.getHeight().toFloat(),
+            RenderUtils.screen.getWidth().toFloat(),
+            RenderUtils.screen.getHeight().toFloat(),
             0x50000000,
         )
 
-        if (-window.scroll > window.height - GUIRenderer.screen.getHeight() + 20)
-            window.scroll = -window.height + GUIRenderer.screen.getHeight() - 20
+        if (-window.scroll > window.height - RenderUtils.screen.getHeight() + 20)
+            window.scroll = -window.height + RenderUtils.screen.getHeight() - 20
         if (-window.scroll < 0) window.scroll = 0f
 
         if (-window.scroll > 0) {
-            val width = GUIRenderer.screen.getWidth()
-            val height = GUIRenderer.screen.getHeight()
+            val width = RenderUtils.screen.getWidth()
+            val height = RenderUtils.screen.getHeight()
             GUIRenderer.drawRect(drawContext, width - 20f, height - 20f, 20f, 20f, 0xAA000000)
             GUIRenderer.drawString(drawContext, "^", width - 12f, height - 12f)
         }
@@ -64,36 +73,27 @@ object ModulesGui : Screen(net.minecraft.text.Text.literal("Modules")) {
             window.height += it.draw(drawContext, middle - width / 2, (window.scroll + window.height).toInt(), width)
         }
 
-        //#if MC<=12105
-        //$$drawContext.matrices.pop()
-        //#else
-        drawContext.matrices.popMatrix()
-        //#endif
+        drawContext.pose().popMatrix()
     }
 
-    //#if MC<=12108
-    //$$override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
-    //$$    super.mouseClicked(mouseX, mouseY, button)
-    //#else
-    override fun mouseClicked(click: Click, double: Boolean): Boolean {
+    override fun mouseClicked(click: MouseButtonEvent, double: Boolean): Boolean {
         super.mouseClicked(click, double)
         val mouseX = click.x
         val mouseY = click.y
-    //#endif
-        var width = GUIRenderer.screen.getWidth() - 100f
+        var width = RenderUtils.screen.getWidth() - 100f
         if (width > 500) width = 500f
 
-        if (mouseX > GUIRenderer.screen.getWidth() - 20 && mouseY > GUIRenderer.screen.getHeight() - 20) {
+        if (mouseX > RenderUtils.screen.getWidth() - 20 && mouseY > RenderUtils.screen.getHeight() - 20) {
             window.scroll = 0f
             return false
         }
 
-        if (mouseX > GUIRenderer.screen.getWidth() / 2f + width / 2f - 25 &&
-            mouseX < GUIRenderer.screen.getWidth() / 2f + width / 2f &&
+        if (mouseX > RenderUtils.screen.getWidth() / 2f + width / 2f - 25 &&
+            mouseX < RenderUtils.screen.getWidth() / 2f + width / 2f &&
             mouseY > window.scroll + 95 &&
             mouseY < window.scroll + 120
         ) {
-            Player.toMC()?.closeScreen()
+            CTPlayer.toMC()?.clientSideCloseContainer()
             return false
         }
 

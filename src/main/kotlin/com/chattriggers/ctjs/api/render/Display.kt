@@ -1,9 +1,14 @@
 package com.chattriggers.ctjs.api.render
 
 import com.chattriggers.ctjs.internal.utils.getOption
-import net.minecraft.client.gui.DrawContext
 import org.mozilla.javascript.NativeObject
 import java.util.concurrent.CopyOnWriteArrayList
+
+//#if MC<=12111
+//$$import net.minecraft.client.gui.GuiGraphics
+//#else
+import net.minecraft.client.gui.GuiGraphicsExtractor
+//#endif
 
 class Display() {
     private var lines = CopyOnWriteArrayList<Text>()
@@ -142,7 +147,13 @@ class Display() {
         this.minWidth = minWidth
     }
 
-    fun draw(ctx: DrawContext) {
+    fun draw(
+        //#if MC<=12111
+        //$$drawContext: GuiGraphics,
+        //#else
+        drawContext: GuiGraphicsExtractor,
+        //#endif
+    ) {
         width = lines.maxOfOrNull { it.getWidth() }?.coerceAtLeast(minWidth) ?: minWidth
 
         val textBackgroundWidth = when (background) {
@@ -174,9 +185,9 @@ class Display() {
             it
                 .setColor(textColor)
                 .setAlign(align)
-                .draw(ctx, linesX, y + currentHeight, x, textBackgroundWidth)
+                .draw(drawContext, linesX, y + currentHeight, x, textBackgroundWidth)
 
-            currentHeight += it.getHeight().toInt()
+            currentHeight += it.getHeight()
         }
 
         height = currentHeight
@@ -194,11 +205,13 @@ class Display() {
     enum class Background {
         NONE,
         FULL,
-        PER_LINE;
+        PER_LINE,
+		;
     }
 
     enum class Order {
         REVERSED,
-        NORMAL;
+        NORMAL,
+		;
     }
 }

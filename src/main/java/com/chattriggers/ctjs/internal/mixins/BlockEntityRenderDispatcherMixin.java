@@ -1,77 +1,78 @@
 package com.chattriggers.ctjs.internal.mixins;
 
+//#if MC>=26.1
 import com.chattriggers.ctjs.internal.engine.CTEvents;
-import net.minecraft.client.util.math.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
+import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import java.util.Objects;
-
-//#if MC<=12108
-//$$import net.minecraft.block.entity.BlockEntity;
-//$$import net.minecraft.client.render.VertexConsumerProvider;
-//$$import net.minecraft.client.render.block.entity.BlockEntityRenderDispatcher;
-//#else
-import com.chattriggers.ctjs.api.client.Client;
-import net.minecraft.client.render.block.entity.BlockEntityRenderManager;
-import net.minecraft.client.render.block.entity.BlockEntityRenderer;
-import net.minecraft.client.render.block.entity.state.BlockEntityRenderState;
-import net.minecraft.client.render.command.OrderedRenderCommandQueue;
-import net.minecraft.client.render.state.CameraRenderState;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
-//#endif
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-//#if MC<=12108
-//$$@Mixin(BlockEntityRenderDispatcher.class)
-//$$public class BlockEntityRenderDispatcherMixin {
-//#else
-@Mixin(BlockEntityRenderManager.class)
+import java.util.IdentityHashMap;
+import java.util.Map;
+
+@Mixin(BlockEntityRenderDispatcher.class)
 public abstract class BlockEntityRenderDispatcherMixin {
-//#endif
+    @Unique
+    private final Map<BlockEntityRenderState, Object[]> ctjs$stateToEntityData = new IdentityHashMap<>();
+
     @Inject(
-        //#if MC<=12108
-        //$$method = "render(Lnet/minecraft/block/entity/BlockEntity;FLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;)V",
-        //#else
-        method = "render",
-        //#endif
+        method = "tryExtractRenderState",
         at = @At(
             value = "INVOKE",
-            //#if MC<=12108
-            //$$target = "Lnet/minecraft/client/render/block/entity/BlockEntityRenderDispatcher;render(Lnet/minecraft/client/render/block/entity/BlockEntityRenderer;Lnet/minecraft/block/entity/BlockEntity;FLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;Lnet/minecraft/util/math/Vec3d;)V"
-            //#else
-            target = "Lnet/minecraft/client/render/block/entity/BlockEntityRenderer;render(Lnet/minecraft/client/render/block/entity/state/BlockEntityRenderState;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/command/OrderedRenderCommandQueue;Lnet/minecraft/client/render/state/CameraRenderState;)V"
-            //#endif
+            target = "Lnet/minecraft/client/renderer/blockentity/BlockEntityRenderer;extractRenderState(Lnet/minecraft/world/level/block/entity/BlockEntity;Lnet/minecraft/client/renderer/blockentity/state/BlockEntityRenderState;FLnet/minecraft/world/phys/Vec3;Lnet/minecraft/client/renderer/feature/ModelFeatureRenderer$CrumblingOverlay;)V",
+            shift = At.Shift.AFTER
         ),
-        cancellable = true
-        //#if MC>=12109
-        , locals = LocalCapture.CAPTURE_FAILSOFT
-        //#endif
+        locals = LocalCapture.CAPTURE_FAILSOFT
     )
-    //#if MC<=12108
-    //$$private void injectRender(
-    //$$    BlockEntity blockEntity,
-    //$$    float tickDelta,
-    //$$    MatrixStack matrices,
-    //$$    VertexConsumerProvider vertexConsumers,
-    //$$    CallbackInfo ci
-    //$$) {
-    //$$    if (blockEntity.hasWorld() && Objects.requireNonNull(blockEntity.getWorld()).isClient) {
-    //$$        CTEvents.RENDER_BLOCK_ENTITY.invoker().render(matrices, blockEntity, tickDelta, ci);
-    //$$    }
-    //#else
+    private <E extends BlockEntity, S extends BlockEntityRenderState> void captureEntityData(
+        E blockEntity,
+        float partialTicks,
+        ModelFeatureRenderer.CrumblingOverlay breakProgress,
+        //#if MC>=26.2
+        boolean isGloballyRendered,
+        //#endif
+        CallbackInfoReturnable<S> cir,
+        BlockEntityRenderer<E, S> renderer,
+        net.minecraft.world.phys.Vec3 cameraPosition,
+        S state
+    ) {
+        ctjs$stateToEntityData.put(state, new Object[]{ blockEntity, partialTicks });
+    }
+
+    @Inject(
+        method = "submit",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/renderer/blockentity/BlockEntityRenderer;submit(Lnet/minecraft/client/renderer/blockentity/state/BlockEntityRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/level/CameraRenderState;)V"
+        ),
+        cancellable = true,
+        locals = LocalCapture.CAPTURE_FAILSOFT
+    )
     private <S extends BlockEntityRenderState> void injectRender(
         S renderState,
-        MatrixStack matrixStack,
-        OrderedRenderCommandQueue queue,
+        PoseStack matrixStack,
+        SubmitNodeCollector queue,
         CameraRenderState cameraRenderState,
         CallbackInfo ci,
-        BlockEntityRenderer blockEntityRenderer
+        BlockEntityRenderer<?, S> renderer
     ) {
-//        fixme
-//        if (blockEntity.getEntityWorld() != null && Objects.requireNonNull(blockEntity.getEntityWorld()).isClient()) {
-//            CTEvents.RENDER_BLOCK_ENTITY.invoker().render(matrixStack, blockEntity, Client.getMinecraft().getRenderTickCounter().getDynamicDeltaTicks(), ci);
-//        }
-    //#endif
+        Object[] data = ctjs$stateToEntityData.remove(renderState);
+        if (data != null) {
+            BlockEntity entity = (BlockEntity) data[0];
+            float partialTicks = (float) data[1];
+            CTEvents.RENDER_BLOCK_ENTITY.invoker().render(matrixStack, entity, partialTicks, ci);
+        }
     }
 }
+//#endif

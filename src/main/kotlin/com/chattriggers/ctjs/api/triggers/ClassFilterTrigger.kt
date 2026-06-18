@@ -1,10 +1,10 @@
 package com.chattriggers.ctjs.api.triggers
 
-import com.chattriggers.ctjs.MCBlockEntity
-import com.chattriggers.ctjs.MCEntity
-import com.chattriggers.ctjs.api.entity.BlockEntity
-import com.chattriggers.ctjs.api.entity.Entity
-import net.minecraft.network.packet.Packet
+import com.chattriggers.ctjs.api.entity.CTBlockEntity
+import com.chattriggers.ctjs.api.entity.CTEntity
+import net.minecraft.network.protocol.Packet
+import net.minecraft.world.entity.Entity
+import net.minecraft.world.level.block.entity.BlockEntity
 
 sealed class ClassFilterTrigger<Wrapped, Unwrapped>(
     method: Any,
@@ -52,20 +52,20 @@ sealed class ClassFilterTrigger<Wrapped, Unwrapped>(
     protected abstract fun unwrap(wrapped: Wrapped): Unwrapped
 }
 
-class RenderEntityTrigger(method: Any) : ClassFilterTrigger<Entity, MCEntity>(
+class RenderEntityTrigger(method: Any) : ClassFilterTrigger<CTEntity, Entity>(
     method,
     TriggerType.RENDER_ENTITY,
-    Entity::class.java,
+    CTEntity::class.java,
 ) {
-    override fun unwrap(wrapped: Entity): MCEntity = wrapped.toMC()
+    override fun unwrap(wrapped: CTEntity): Entity = wrapped.toMC()
 }
 
-class RenderBlockEntityTrigger(method: Any) : ClassFilterTrigger<BlockEntity, MCBlockEntity>(
+class RenderBlockEntityTrigger(method: Any) : ClassFilterTrigger<CTBlockEntity, BlockEntity>(
     method,
     TriggerType.RENDER_BLOCK_ENTITY,
-    BlockEntity::class.java
+    CTBlockEntity::class.java
 ) {
-    override fun unwrap(wrapped: BlockEntity): MCBlockEntity = wrapped.toMC()
+    override fun unwrap(wrapped: CTBlockEntity): BlockEntity = wrapped.toMC()
 }
 
 class PacketTrigger(method: Any, triggerType: ITriggerType) : ClassFilterTrigger<Packet<*>, Packet<*>>(

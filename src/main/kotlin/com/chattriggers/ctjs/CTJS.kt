@@ -3,8 +3,8 @@ package com.chattriggers.ctjs
 import com.chattriggers.ctjs.api.Config
 import com.chattriggers.ctjs.api.client.Client
 import com.chattriggers.ctjs.api.client.KeyBind
-import com.chattriggers.ctjs.api.client.Player
-import com.chattriggers.ctjs.api.client.Sound
+import com.chattriggers.ctjs.api.client.CTPlayer
+import com.chattriggers.ctjs.api.client.CTSound
 import com.chattriggers.ctjs.api.commands.DynamicCommands
 import com.chattriggers.ctjs.api.message.ChatLib
 import com.chattriggers.ctjs.api.render.Image
@@ -35,7 +35,7 @@ class CTJS : ClientModInitializer {
             reportHashedUUID()
         }
 
-        Config.loadData()
+//        Config.loadData()
 
         Runtime.getRuntime().addShutdownHook(Thread {
             TriggerType.GAME_UNLOAD.triggerAll()
@@ -44,7 +44,7 @@ class CTJS : ClientModInitializer {
     }
 
     private fun reportHashedUUID() {
-        val uuid = Player.getUUID().toString().encodeToByteArray()
+        val uuid = CTPlayer.getUUID().toString().encodeToByteArray()
         val salt = (System.getProperty("user.name") ?: "").encodeToByteArray()
         val md = MessageDigest.getInstance("SHA-256")
         md.update(salt)
@@ -59,7 +59,7 @@ class CTJS : ClientModInitializer {
     companion object {
         const val MOD_ID = "ctjs"
         const val WEBSITE_ROOT = "https://www.chattriggers.com"
-        const val MOD_VERSION = "3.0.5b"
+        const val MOD_VERSION = "3.0.6b"
         const val MODULES_FOLDER = "./config/ChatTriggers/modules"
 
         val configLocation = File("./config")
@@ -72,7 +72,7 @@ class CTJS : ClientModInitializer {
             private set
 
         internal val images = mutableListOf<Image>()
-        internal val sounds = mutableListOf<Sound>()
+        internal val sounds = mutableListOf<CTSound>()
         internal val isDevelopment = FabricLoader.getInstance().isDevelopmentEnvironment
 
         internal val json = Json {
@@ -107,7 +107,7 @@ class CTJS : ClientModInitializer {
 
             Client.scheduleTask {
                 images.forEach(Image::destroy)
-                sounds.forEach(Sound::destroy)
+                sounds.forEach(CTSound::destroy)
 
                 images.clear()
                 sounds.clear()
@@ -119,7 +119,7 @@ class CTJS : ClientModInitializer {
 
         @JvmStatic
         fun load(asCommand: Boolean = true) {
-            Client.getMinecraft().options.write()
+            Client.getMinecraft().options.save()
             unload(asCommand = false)
 
             if (asCommand)

@@ -8,9 +8,8 @@ import com.chattriggers.ctjs.internal.engine.CTEvents
 import com.chattriggers.ctjs.internal.engine.JSLoader
 import com.chattriggers.ctjs.internal.utils.Initializer
 import kotlinx.serialization.json.Json
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper
-import net.minecraft.client.option.KeyBinding
-import net.minecraft.client.util.InputUtil
+import net.minecraft.client.KeyMapping
+import com.mojang.blaze3d.platform.InputConstants
 import org.lwjgl.glfw.GLFW
 import java.awt.Color
 import java.io.BufferedReader
@@ -19,16 +18,15 @@ import java.io.InputStreamReader
 import java.io.PrintWriter
 import java.net.ServerSocket
 import java.net.URLClassLoader
-import java.net.URLDecoder
-import java.nio.charset.Charset
 import kotlin.concurrent.thread
 import kotlin.io.path.Path
-import net.minecraft.util.Util
 
-//#if MC<=12108
-//$$import kotlinx.serialization.encodeToString
+import net.minecraft.resources.Identifier
+
+//#if MC<=12111
+//$$import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper
 //#else
-import net.minecraft.util.Identifier
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper
 //#endif
 
 /**
@@ -64,21 +62,21 @@ object ConsoleHostProcess : Initializer {
     }
 
     override fun init() {
-        val keybind = KeyBindingHelper.registerKeyBinding(
-            KeyBinding(
+        //#if MC<=12111
+        //$$val keybind = KeyBindingHelper.registerKeyBinding(
+        //#else
+        val keybind = KeyMappingHelper.registerKeyMapping(
+        //#endif
+            KeyMapping(
                 "ctjs.key.binding.console",
-                InputUtil.Type.KEYSYM,
+                InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_GRAVE_ACCENT,
-                //#if MC<=12108
-                //$$"ctjs.key.category",
-                //#else
-                KeyBinding.Category.create(Identifier.of("ctjs.key.category")),
-                //#endif
+                KeyMapping.Category.register(Identifier.parse("ctjs.key.category")),
             ),
         )
 
         CTEvents.RENDER_GAME.register {
-            if (keybind.wasPressed()) {
+            if (keybind.consumeClick()) {
                 show()
             }
         }

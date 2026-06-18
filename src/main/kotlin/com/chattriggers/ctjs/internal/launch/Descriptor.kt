@@ -24,7 +24,8 @@ sealed interface Descriptor {
         INT(Type.INT_TYPE),
         FLOAT(Type.FLOAT_TYPE),
         LONG(Type.LONG_TYPE),
-        DOUBLE(Type.DOUBLE_TYPE);
+        DOUBLE(Type.DOUBLE_TYPE),
+		;
 
         override fun originalDescriptor(): String = type.descriptor
 

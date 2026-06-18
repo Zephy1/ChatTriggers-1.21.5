@@ -4,6 +4,9 @@ import com.chattriggers.ctjs.CTJS
 import com.chattriggers.ctjs.internal.utils.urlEncode
 import net.fabricmc.loader.api.FabricLoader
 import net.fabricmc.mappingio.MappingReader
+import net.fabricmc.mappingio.adapter.MappingNsRenamer
+import net.fabricmc.mappingio.adapter.MappingSourceNsSwitch
+import net.fabricmc.mappingio.format.MappingFormat
 import net.fabricmc.mappingio.tree.MappingTree.ElementMapping
 import net.fabricmc.mappingio.tree.MappingTree.MethodArgMapping
 import net.fabricmc.mappingio.tree.MappingTreeView
@@ -17,11 +20,9 @@ import java.net.URI
 import java.nio.file.Files
 import java.util.zip.ZipFile
 
-/**
- * Allows runtime inspection of mappings
- */
 object Mappings {
-    private const val YARN_MAPPINGS_URL_PREFIX = "https://maven.fabricmc.net/net/fabricmc/yarn/"
+    private const val INTERMEDIARY_MAPPINGS_URL_PREFIX = "https://maven.fabricmc.net/net/fabricmc/intermediary/"
+    private const val MOJMAP_VERSION_MANIFEST_URL = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"
 
     // If this is changed, also change the Java.type function in mixinProvidedLibs.js
     internal val mappedPackages = setOf("Lnet/minecraft/", "Lcom/mojang/blaze3d/")
@@ -30,66 +31,120 @@ object Mappings {
     private val mappedToUnmappedClassNames = mutableMapOf<String, String>()
 
     internal fun initialize() {
-        val container = FabricLoader.getInstance().getModContainer(CTJS.MOD_ID)
-        val mappingVersion = container.get().metadata.getCustomValue("${CTJS.MOD_ID}:yarn-mappings").asString
-        val jarName = "yarn-$mappingVersion-v2.jar".urlEncode()
+        //#if MC>=26.1
+        return
+        //#endif
 
-        val jarBytes = URI("$YARN_MAPPINGS_URL_PREFIX${mappingVersion.urlEncode()}/$jarName").toURL().readBytes()
-        val tempFile = Files.createTempFile(CTJS.MOD_ID, "mapping").toFile()
-        tempFile.writeBytes(jarBytes)
+        val minecraftVersion = FabricLoader.getInstance()
+            .getModContainer("minecraft")
+            .get()
+            .metadata
+            .version
+            .friendlyString
 
-        val mappingBytes = ZipFile(tempFile).use { file ->
+        val jarName = "intermediary-$minecraftVersion-v2.jar".urlEncode()
+        val intermediaryJarBytes = URI("${INTERMEDIARY_MAPPINGS_URL_PREFIX}$minecraftVersion/${jarName}").toURL().readBytes()
+        val intermediaryTempFile = Files.createTempFile(CTJS.MOD_ID, "intermediary-mapping").toFile()
+        intermediaryTempFile.writeBytes(intermediaryJarBytes)
+
+        val intermediaryMappingBytes = ZipFile(intermediaryTempFile).use { file ->
             file.getInputStream(file.getEntry("mappings/mappings.tiny")).readAllBytes()
         }
 
-        val tree = MemoryMappingTree()
-        MappingReader.read(ByteArrayInputStream(mappingBytes).bufferedReader(), tree)
+        val intermediaryTree = MemoryMappingTree()
+        MappingReader.read(ByteArrayInputStream(intermediaryMappingBytes).bufferedReader(), intermediaryTree)
 
-        tree.classes.forEach { clazz ->
+        val intermediaryRenamed = MemoryMappingTree()
+        intermediaryTree.accept(MappingNsRenamer(intermediaryRenamed, mapOf("official" to "obf")))
+
+        val manifestJson = URI(MOJMAP_VERSION_MANIFEST_URL).toURL().readText()
+        val versionUrl = Regex(
+            """"id"\s*:\s*"${Regex.escape(minecraftVersion)}".*?"url"\s*:\s*"([^"]+)"""",
+            RegexOption.DOT_MATCHES_ALL
+        ).find(manifestJson)?.groupValues?.get(1) ?: error("Could not find version $minecraftVersion in manifest")
+
+        val versionJson = URI(versionUrl).toURL().readText()
+        val mojmapUrl = Regex(
+            """"client_mappings".*?"url"\s*:\s*"([^"]+)"""",
+            RegexOption.DOT_MATCHES_ALL
+        ).find(versionJson)?.groupValues?.get(1) ?: error("Could not find client mappings in version $minecraftVersion")
+
+        val mojmapBytes = URI(mojmapUrl).toURL().readBytes()
+
+        val mojmapTree = MemoryMappingTree()
+        MappingReader.read(
+            ByteArrayInputStream(mojmapBytes).bufferedReader(),
+            MappingFormat.PROGUARD_FILE,
+            mojmapTree
+        )
+
+        val mojmapRenamed = MemoryMappingTree()
+        mojmapTree.accept(MappingNsRenamer(mojmapRenamed, mapOf("source" to "mojmap", "target" to "obf")))
+
+        val mojmapSwitched = MemoryMappingTree()
+        mojmapRenamed.accept(MappingSourceNsSwitch(mojmapSwitched, "obf"))
+
+        val preMerge = MemoryMappingTree()
+        intermediaryRenamed.accept(preMerge)
+        mojmapSwitched.accept(preMerge)
+
+        val intermediaryNs = preMerge.getNamespaceId("intermediary")
+        val mojmapNs = preMerge.getNamespaceId("mojmap")
+
+        preMerge.classes.forEach { clazz ->
+            val mojmapName = clazz.getDstName(mojmapNs) ?: return@forEach
+            val intermediaryName = clazz.getDstName(intermediaryNs) ?: return@forEach
+
             val fields = mutableMapOf<String, MappedField>()
-
             clazz.fields.forEach { field ->
-                fields[field.unmappedName] = MappedField(
-                    name = Mapping.fromMapped(field),
-                    type = Mapping(field.unmappedType.descriptor, field.mappedType.descriptor),
+                val fieldMojmap = field.getDstName(mojmapNs) ?: return@forEach
+                val fieldIntermediary = field.getDstName(intermediaryNs) ?: fieldMojmap
+                val typeMojmap = field.getDstDesc(mojmapNs) ?: field.srcDesc
+                val typeIntermediary = field.getDstDesc(intermediaryNs) ?: typeMojmap
+                fields[fieldMojmap] = MappedField(
+                    name = Mapping(fieldMojmap, fieldIntermediary),
+                    type = Mapping(typeMojmap!!, typeIntermediary!!),
                 )
             }
 
             val methods = mutableMapOf<String, MutableList<MappedMethod>>()
-
             clazz.methods.forEach { method ->
-                val unmappedType = method.unmappedType
-                val mappedType = method.mappedType
+                val methodMojmap = method.getDstName(mojmapNs) ?: return@forEach
+                val methodIntermediary = method.getDstName(intermediaryNs) ?: methodMojmap
+                val descMojmap = method.getDstDesc(mojmapNs) ?: method.srcDesc
+                val descIntermediary = method.getDstDesc(intermediaryNs) ?: descMojmap
+                val mojmapType = Type.getType(descMojmap)
+                val intermediaryType = Type.getType(descIntermediary)
 
-                methods.getOrPut(method.unmappedName, ::mutableListOf).add(
+                methods.getOrPut(methodMojmap, ::mutableListOf).add(
                     MappedMethod(
-                        name = Mapping.fromMapped(method),
+                        name = Mapping(methodMojmap, methodIntermediary),
                         parameters = method.args.sortedBy { it.lvIndex }.mapIndexed { index, param ->
                             MappedParameter(
-                                Mapping(param.unmappedName, param.mappedName),
+                                Mapping(param.srcName ?: "p$index", param.srcName ?: "p$index"),
                                 Mapping(
-                                    unmappedType.argumentTypes[index].descriptor,
-                                    mappedType.argumentTypes[index].descriptor,
+                                    mojmapType.argumentTypes[index].descriptor,
+                                    intermediaryType.argumentTypes[index].descriptor,
                                 ),
                                 param.lvIndex,
                             )
                         },
-                        returnType = Mapping(unmappedType.returnType.descriptor, mappedType.returnType.descriptor),
-                    ),
+                        returnType = Mapping(
+                            mojmapType.returnType.descriptor,
+                            intermediaryType.returnType.descriptor,
+                        ),
+                    )
                 )
             }
 
-            unmappedClasses[clazz.unmappedName] = MappedClass(
-                name = Mapping.fromMapped(clazz),
+            unmappedClasses[mojmapName] = MappedClass(
+                name = Mapping(mojmapName, intermediaryName),
                 fields,
                 methods,
             )
 
-            if (CTJS.isDevelopment) {
-                mappedToUnmappedClassNames[clazz.unmappedName] = clazz.unmappedName
-            } else {
-                mappedToUnmappedClassNames[clazz.mappedName] = clazz.unmappedName
-            }
+            mappedToUnmappedClassNames[mojmapName] = mojmapName
+            mappedToUnmappedClassNames[intermediaryName] = mojmapName
         }
     }
 
@@ -241,18 +296,17 @@ object Mappings {
     }
 
     private val ElementMapping.unmappedName: String
-        get() = getName("named")!!
+        get() = srcName!!
 
     private val ElementMapping.mappedName: String
         get() = getName("intermediary")!!
 
-    // Parameters do not have "intermediary" mappings
     private val MethodArgMapping.mappedName: String
         get() = unmappedName
 
     private val MappingTreeView.MemberMappingView.unmappedType: Type
-        get() = Type.getType(getDesc("named"))
+        get() = Type.getType(srcDesc)!!
 
     private val MappingTreeView.MemberMappingView.mappedType: Type
-        get() = Type.getType(getDesc("intermediary"))
+        get() = Type.getType(getDesc("intermediary")!!)
 }

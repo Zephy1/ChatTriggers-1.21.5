@@ -1,14 +1,14 @@
 package com.chattriggers.ctjs.api.client
 
-import com.chattriggers.ctjs.MCChatVisibility
-import com.chattriggers.ctjs.MCCloudRenderMode
-import com.chattriggers.ctjs.MCDifficulty
-import com.chattriggers.ctjs.MCGraphicsMode
-import com.chattriggers.ctjs.MCParticlesMode
 import com.chattriggers.ctjs.api.CTWrapper
 import com.chattriggers.ctjs.api.world.World
-import net.minecraft.entity.player.PlayerModelPart
-import net.minecraft.sound.SoundCategory
+import net.minecraft.client.CloudStatus
+import net.minecraft.client.GraphicsPreset
+import net.minecraft.server.level.ParticleStatus
+import net.minecraft.world.entity.player.PlayerModelPart
+import net.minecraft.sounds.SoundSource
+import net.minecraft.world.Difficulty
+import net.minecraft.world.entity.player.ChatVisiblity
 
 object Settings {
     @JvmStatic
@@ -19,11 +19,11 @@ object Settings {
     fun getSettings() = toMC()
 
     @JvmStatic
-    fun getFOV() = toMC().fov.value
+    fun getFOV(): Int = toMC().fov().get()
 
     @JvmStatic
     fun setFOV(fov: Int) {
-        toMC().fov.value = fov
+        toMC().fov().set(fov)
     }
 
     @JvmStatic
@@ -42,332 +42,328 @@ object Settings {
     val video = VideoWrapper()
 
     class SkinWrapper {
-        fun isCapeEnabled() = toMC().isPlayerModelPartEnabled(PlayerModelPart.CAPE)
+        fun isCapeEnabled() = toMC().isModelPartEnabled(PlayerModelPart.CAPE)
 
         fun setCapeEnabled(toggled: Boolean) {
-            toMC().setPlayerModelPart(PlayerModelPart.CAPE, toggled)
+            toMC().setModelPart(PlayerModelPart.CAPE, toggled)
         }
 
-        fun isJacketEnabled() = toMC().isPlayerModelPartEnabled(PlayerModelPart.JACKET)
+        fun isJacketEnabled() = toMC().isModelPartEnabled(PlayerModelPart.JACKET)
 
         fun setJacketEnabled(toggled: Boolean) {
-            toMC().setPlayerModelPart(PlayerModelPart.JACKET, toggled)
+            toMC().setModelPart(PlayerModelPart.JACKET, toggled)
         }
 
-        fun isLeftSleeveEnabled() = toMC().isPlayerModelPartEnabled(PlayerModelPart.LEFT_SLEEVE)
+        fun isLeftSleeveEnabled() = toMC().isModelPartEnabled(PlayerModelPart.LEFT_SLEEVE)
 
         fun setLeftSleeveEnabled(toggled: Boolean) {
-            toMC().setPlayerModelPart(PlayerModelPart.LEFT_SLEEVE, toggled)
+            toMC().setModelPart(PlayerModelPart.LEFT_SLEEVE, toggled)
         }
 
-        fun isRightSleeveEnabled() = toMC().isPlayerModelPartEnabled(PlayerModelPart.RIGHT_SLEEVE)
+        fun isRightSleeveEnabled() = toMC().isModelPartEnabled(PlayerModelPart.RIGHT_SLEEVE)
 
         fun setRightSleeveEnabled(toggled: Boolean) {
-            toMC().setPlayerModelPart(PlayerModelPart.RIGHT_SLEEVE, toggled)
+            toMC().setModelPart(PlayerModelPart.RIGHT_SLEEVE, toggled)
         }
 
-        fun isLeftPantsLegEnabled() = toMC().isPlayerModelPartEnabled(PlayerModelPart.LEFT_PANTS_LEG)
+        fun isLeftPantsLegEnabled() = toMC().isModelPartEnabled(PlayerModelPart.LEFT_PANTS_LEG)
 
         fun setLeftPantsLegEnabled(toggled: Boolean) {
-            toMC().setPlayerModelPart(PlayerModelPart.LEFT_PANTS_LEG, toggled)
+            toMC().setModelPart(PlayerModelPart.LEFT_PANTS_LEG, toggled)
         }
 
-        fun isRightPantsLegEnabled() = toMC().isPlayerModelPartEnabled(PlayerModelPart.RIGHT_PANTS_LEG)
+        fun isRightPantsLegEnabled() = toMC().isModelPartEnabled(PlayerModelPart.RIGHT_PANTS_LEG)
 
         fun setRightPantsLegEnabled(toggled: Boolean) {
-            toMC().setPlayerModelPart(PlayerModelPart.RIGHT_PANTS_LEG, toggled)
+            toMC().setModelPart(PlayerModelPart.RIGHT_PANTS_LEG, toggled)
         }
 
-        fun isHatEnabled() = toMC().isPlayerModelPartEnabled(PlayerModelPart.HAT)
+        fun isHatEnabled() = toMC().isModelPartEnabled(PlayerModelPart.HAT)
 
         fun setHatEnabled(toggled: Boolean) {
-            toMC().setPlayerModelPart(PlayerModelPart.HAT, toggled)
+            toMC().setModelPart(PlayerModelPart.HAT, toggled)
         }
     }
 
     class SoundWrapper {
-        fun getMasterVolume() = toMC().getSoundVolumeOption(SoundCategory.MASTER).value
+        fun getMasterVolume() = toMC().getSoundSourceOptionInstance(SoundSource.MASTER).get()
 
         fun setMasterVolume(level: Double) {
-            toMC().getSoundVolumeOption(SoundCategory.MASTER).value = level
+            toMC().getSoundSourceOptionInstance(SoundSource.MASTER).set(level)
         }
 
-        fun getMusicVolume() = toMC().getSoundVolumeOption(SoundCategory.MUSIC).value
+        fun getMusicVolume() = toMC().getSoundSourceOptionInstance(SoundSource.MUSIC).get()
 
         fun setMusicVolume(level: Double) {
-            toMC().getSoundVolumeOption(SoundCategory.MUSIC).value = level
+            toMC().getSoundSourceOptionInstance(SoundSource.MUSIC).set(level)
         }
 
-        fun getNoteblockVolume() = toMC().getSoundVolumeOption(SoundCategory.RECORDS).value
+        fun getNoteblockVolume() = toMC().getSoundSourceOptionInstance(SoundSource.RECORDS).get()
 
         fun setNoteblockVolume(level: Double) {
-            toMC().getSoundVolumeOption(SoundCategory.RECORDS).value = level
+            toMC().getSoundSourceOptionInstance(SoundSource.RECORDS).set(level)
         }
 
-        fun getWeather() = toMC().getSoundVolumeOption(SoundCategory.WEATHER).value
+        fun getWeather() = toMC().getSoundSourceOptionInstance(SoundSource.WEATHER).get()
 
         fun setWeather(level: Double) {
-            toMC().getSoundVolumeOption(SoundCategory.WEATHER).value = level
+            toMC().getSoundSourceOptionInstance(SoundSource.WEATHER).set(level)
         }
 
-        fun getBlocks() = toMC().getSoundVolumeOption(SoundCategory.BLOCKS).value
+        fun getBlocks() = toMC().getSoundSourceOptionInstance(SoundSource.BLOCKS).get()
 
         fun setBlocks(level: Double) {
-            toMC().getSoundVolumeOption(SoundCategory.BLOCKS).value = level
+            toMC().getSoundSourceOptionInstance(SoundSource.BLOCKS).set(level)
         }
 
-        fun getHostileCreatures() = toMC().getSoundVolumeOption(SoundCategory.HOSTILE).value
+        fun getHostileCreatures() = toMC().getSoundSourceOptionInstance(SoundSource.HOSTILE).get()
 
         fun setHostileCreatures(level: Double) {
-            toMC().getSoundVolumeOption(SoundCategory.HOSTILE).value = level
+            toMC().getSoundSourceOptionInstance(SoundSource.HOSTILE).set(level)
         }
 
-        fun getFriendlyCreatures() = toMC().getSoundVolumeOption(SoundCategory.NEUTRAL).value
+        fun getFriendlyCreatures() = toMC().getSoundSourceOptionInstance(SoundSource.NEUTRAL).get()
 
         fun setFriendlyCreatures(level: Double) {
-            toMC().getSoundVolumeOption(SoundCategory.NEUTRAL).value = level
+            toMC().getSoundSourceOptionInstance(SoundSource.NEUTRAL).set(level)
         }
 
-        fun getPlayers() = toMC().getSoundVolumeOption(SoundCategory.PLAYERS).value
+        fun getPlayers() = toMC().getSoundSourceOptionInstance(SoundSource.PLAYERS).get()
 
         fun setPlayers(level: Double) {
-            toMC().getSoundVolumeOption(SoundCategory.PLAYERS).value = level
+            toMC().getSoundSourceOptionInstance(SoundSource.PLAYERS).set(level)
         }
 
-        fun getAmbient() = toMC().getSoundVolumeOption(SoundCategory.AMBIENT).value
+        fun getAmbient() = toMC().getSoundSourceOptionInstance(SoundSource.AMBIENT).get()
 
         fun setAmbient(level: Double) {
-            toMC().getSoundVolumeOption(SoundCategory.AMBIENT).value = level
+            toMC().getSoundSourceOptionInstance(SoundSource.AMBIENT).set(level)
         }
     }
 
     class VideoWrapper {
-        //#if MC<=12110
-        //$$fun getGraphicsMode() = GraphicsMode.fromMC(toMC().graphicsMode.value)
-        //#else
-        fun getGraphicsMode() = GraphicsMode.fromMC(toMC().preset.value)
-        //#endif
 
-        fun setGraphicsMode(mode: GraphicsMode) {
-        //#if MC<=12110
-        //$$toMC().graphicsMode.value = mode.toMC()
-        //#else
-            toMC().preset.value = mode.toMC()
-        //#endif
+        fun setGraphicsMode(mode: CTGraphicsMode) {
+            toMC().graphicsPreset().set(mode.toMC())
         }
 
-        fun getRenderDistance() = toMC().viewDistance.value
+        fun getRenderDistance() = toMC().renderDistance().get()
 
         fun setRenderDistance(distance: Int) {
-            toMC().viewDistance.value = distance
+            toMC().renderDistance().set(distance)
         }
 
-        fun getSmoothLighting() = toMC().ao.value
+        fun getSmoothLighting() = toMC().ambientOcclusion().get()
 
         fun setSmoothLighting(enabled: Boolean) {
-            toMC().ao.value = enabled
+            toMC().ambientOcclusion().set(enabled)
         }
 
-        fun getMaxFrameRate() = toMC().maxFps.value
+        fun getMaxFrameRate() = toMC().framerateLimit().get()
 
         fun setMaxFrameRate(frameRate: Int) {
-            toMC().maxFps.value = frameRate
+            toMC().framerateLimit().set(frameRate)
         }
 
-        fun getBobbing() = toMC().bobView.value
+        fun getBobbing() = toMC().bobView().get()
 
         fun setBobbing(toggled: Boolean) {
-            toMC().bobView.value = toggled
+            toMC().bobView().set(toggled)
         }
 
-        fun getGuiScale() = toMC().guiScale.value
+        fun getGuiScale() = toMC().guiScale().get()
 
         fun setGuiScale(scale: Int) {
-            toMC().guiScale.value = scale
+            toMC().guiScale().set(scale)
         }
 
-        fun getBrightness() = toMC().gamma.value
+        fun getBrightness() = toMC().gamma().get()
 
         fun setBrightness(brightness: Double) {
-            toMC().gamma.value = brightness
+            toMC().gamma().set(brightness)
         }
 
-        fun getClouds() = CloudRenderMode.fromMC(toMC().cloudRenderMode.value)
+        fun getClouds() = CTCloudRenderMode.fromMC(toMC().cloudStatus().get())
 
-        fun setClouds(clouds: CloudRenderMode) {
-            toMC().cloudRenderMode.value = clouds.toMC()
+        fun setClouds(clouds: CTCloudRenderMode) {
+            toMC().cloudStatus().set(clouds.toMC())
         }
 
-        fun getParticles() = ParticlesMode.fromMC(toMC().particles.value)
+        fun getParticles() = CTParticlesMode.fromMC(toMC().particles().get())
 
-        fun setParticles(particles: ParticlesMode) {
-            toMC().particles.value = particles.toMC()
+        fun setParticles(particles: CTParticlesMode) {
+            toMC().particles().set(particles.toMC())
         }
 
-        fun getFullscreen() = toMC().fullscreen.value
+        fun getFullscreen() = toMC().fullscreen().get()
 
         fun setFullscreen(toggled: Boolean) {
-            toMC().fullscreen.value = toggled
+            toMC().fullscreen().set(toggled)
         }
 
-        fun getVsync() = toMC().enableVsync.value
+        fun getVsync() = toMC().enableVsync().get()
 
         fun setVsync(toggled: Boolean) {
-            toMC().enableVsync.value = toggled
+            toMC().enableVsync().set(toggled)
         }
 
-        fun getMipmapLevels() = toMC().mipmapLevels.value
+        fun getMipmapLevels() = toMC().mipmapLevels().get()
 
         fun setMipmapLevels(mipmapLevels: Int) {
-            toMC().mipmapLevels.value = mipmapLevels
+            toMC().mipmapLevels().set(mipmapLevels)
         }
 
-        fun getEntityShadows() = toMC().entityShadows.value
+        fun getEntityShadows() = toMC().entityShadows().get()
 
         fun setEntityShadows(toggled: Boolean) {
-            toMC().entityShadows.value = toggled
+            toMC().entityShadows().set(toggled)
         }
     }
 
     class ChatWrapper {
-        fun getVisibility() = ChatVisibility.fromMC(toMC().chatVisibility.value)
+        fun getVisibility() = CTChatVisibility.fromMC(toMC().chatVisibility().get())
 
-        fun setVisibility(visibility: ChatVisibility) {
-            toMC().chatVisibility.value = visibility.toMC()
+        fun setVisibility(visibility: CTChatVisibility) {
+            toMC().chatVisibility().set(visibility.toMC())
         }
 
-        fun getColors() = toMC().chatColors.value
+        fun getColors() = toMC().chatColors().get()
 
         fun setColors(toggled: Boolean) {
-            toMC().chatColors.value = toggled
+            toMC().chatColors().set(toggled)
         }
 
-        fun getWebLinks() = toMC().chatLinks.value
+        fun getWebLinks() = toMC().chatLinks().get()
 
         fun setWebLinks(toggled: Boolean) {
-            toMC().chatLinks.value = toggled
+            toMC().chatLinks().set(toggled)
         }
 
-        fun getOpacity() = toMC().chatOpacity.value
+        fun getOpacity() = toMC().chatOpacity().get()
 
         fun setOpacity(opacity: Double) {
-            toMC().chatOpacity.value = opacity
+            toMC().chatOpacity().set(opacity)
         }
 
-        fun getPromptOnWebLinks() = toMC().chatLinksPrompt.value
+        fun getPromptOnWebLinks() = toMC().chatLinksPrompt().get()
 
         fun setPromptOnWebLinks(toggled: Boolean) {
-            toMC().chatLinksPrompt.value = toggled
+            toMC().chatLinksPrompt().set(toggled)
         }
 
-        fun getScale() = toMC().chatScale.value
+        fun getScale() = toMC().chatScale().get()
 
         fun setScale(scale: Double) {
-            toMC().chatScale.value = scale
+            toMC().chatScale().set(scale)
         }
 
-        fun getFocusedHeight() = toMC().chatHeightFocused.value
+        fun getFocusedHeight() = toMC().chatHeightFocused().get()
 
         fun setFocusedHeight(height: Double) {
-            toMC().chatHeightFocused.value = height
+            toMC().chatHeightFocused().set(height)
         }
 
-        fun getUnfocusedHeight() = toMC().chatHeightUnfocused.value
+        fun getUnfocusedHeight() = toMC().chatHeightUnfocused().get()
 
         fun setUnfocusedHeight(height: Double) {
-            toMC().chatHeightUnfocused.value = height
+            toMC().chatHeightUnfocused().set(height)
         }
 
-        fun getWidth() = toMC().chatWidth.value
+        fun getWidth() = toMC().chatWidth().get()
 
         fun setWidth(width: Double) {
-            toMC().chatWidth.value = width
+            toMC().chatWidth().set(width)
         }
 
-        fun getReducedDebugInfo() = toMC().reducedDebugInfo.value
+        fun getReducedDebugInfo() = toMC().reducedDebugInfo().get()
 
         fun setReducedDebugInfo(toggled: Boolean) {
-            toMC().reducedDebugInfo.value = toggled
+            toMC().reducedDebugInfo().set(toggled)
         }
     }
 
-    enum class CloudRenderMode(override val mcValue: MCCloudRenderMode) : CTWrapper<MCCloudRenderMode> {
-        OFF(MCCloudRenderMode.OFF),
-        FAST(MCCloudRenderMode.FAST),
-        FANCY(MCCloudRenderMode.FANCY);
+    enum class CTCloudRenderMode(override val mcValue: CloudStatus) : CTWrapper<CloudStatus> {
+        OFF(CloudStatus.OFF),
+        FAST(CloudStatus.FAST),
+        FANCY(CloudStatus.FANCY),
+        ;
 
         companion object {
             @JvmStatic
-            fun fromMC(mcValue: MCCloudRenderMode) = entries.first { it.mcValue == mcValue }
+            fun fromMC(mcValue: CloudStatus) = entries.first { it.mcValue == mcValue }
 
             @JvmStatic
             fun from(value: Any) = when (value) {
                 is CharSequence -> valueOf(value.toString())
-                is MCCloudRenderMode -> fromMC(value)
-                is CloudRenderMode -> value
+                is CloudStatus -> fromMC(value)
+                is CTCloudRenderMode -> value
                 else -> throw IllegalArgumentException("Cannot create CloudRenderMode from $value")
             }
         }
     }
 
-    enum class ParticlesMode(override val mcValue: MCParticlesMode) : CTWrapper<MCParticlesMode> {
-        ALL(MCParticlesMode.ALL),
-        DECREASED(MCParticlesMode.DECREASED),
-        MINIMAL(MCParticlesMode.MINIMAL);
+    enum class CTParticlesMode(override val mcValue: ParticleStatus) : CTWrapper<ParticleStatus> {
+        ALL(ParticleStatus.ALL),
+        DECREASED(ParticleStatus.DECREASED),
+        MINIMAL(ParticleStatus.MINIMAL),
+        ;
 
         companion object {
             @JvmStatic
-            fun fromMC(mcValue: MCParticlesMode) = entries.first { it.mcValue == mcValue }
+            fun fromMC(mcValue: ParticleStatus) = entries.first { it.mcValue == mcValue }
 
             @JvmStatic
             fun from(value: Any) = when (value) {
                 is CharSequence -> valueOf(value.toString())
-                is MCParticlesMode -> fromMC(value)
-                is ParticlesMode -> value
+                is ParticleStatus -> fromMC(value)
+                is CTParticlesMode -> value
                 else -> throw IllegalArgumentException("Cannot create ParticlesMode from $value")
             }
         }
     }
 
-    enum class ChatVisibility(override val mcValue: MCChatVisibility) : CTWrapper<MCChatVisibility> {
-        FULL(MCChatVisibility.FULL),
-        SYSTEM(MCChatVisibility.SYSTEM),
-        HIDDEN(MCChatVisibility.HIDDEN);
+    enum class CTChatVisibility(override val mcValue: ChatVisiblity) : CTWrapper<ChatVisiblity> {
+        FULL(ChatVisiblity.FULL),
+        SYSTEM(ChatVisiblity.SYSTEM),
+        HIDDEN(ChatVisiblity.HIDDEN),
+        ;
 
         companion object {
             @JvmStatic
-            fun fromMC(mcValue: MCChatVisibility) = entries.first { it.mcValue == mcValue }
+            fun fromMC(mcValue: ChatVisiblity) = entries.first { it.mcValue == mcValue }
 
             @JvmStatic
             fun from(value: Any) = when (value) {
                 is CharSequence -> valueOf(value.toString())
-                is MCChatVisibility -> fromMC(value)
-                is ChatVisibility -> value
+                is ChatVisiblity -> fromMC(value)
+                is CTChatVisibility -> value
                 else -> throw IllegalArgumentException("Cannot create ChatVisibility from $value")
             }
         }
     }
 
-    enum class Difficulty(override val mcValue: MCDifficulty) : CTWrapper<MCDifficulty> {
-        PEACEFUL(MCDifficulty.PEACEFUL),
-        EASY(MCDifficulty.EASY),
-        NORMAL(MCDifficulty.NORMAL),
-        HARD(MCDifficulty.HARD);
+    enum class CTDifficulty(override val mcValue: Difficulty) : CTWrapper<Difficulty> {
+        PEACEFUL(Difficulty.PEACEFUL),
+        EASY(Difficulty.EASY),
+        NORMAL(Difficulty.NORMAL),
+        HARD(Difficulty.HARD),
+        ;
 
         companion object {
             @JvmStatic
-            fun fromMC(mcValue: MCDifficulty) = entries.first { it.mcValue == mcValue }
+            fun fromMC(mcValue: Difficulty) = entries.first { it.mcValue == mcValue }
         }
     }
 
-    enum class GraphicsMode(override val mcValue: MCGraphicsMode) : CTWrapper<MCGraphicsMode> {
-        FAST(MCGraphicsMode.FAST),
-        FANCY(MCGraphicsMode.FANCY),
-        FABULOUS(MCGraphicsMode.FABULOUS);
+    enum class CTGraphicsMode(override val mcValue: GraphicsPreset) : CTWrapper<GraphicsPreset> {
+        FAST(GraphicsPreset.FAST),
+        FANCY(GraphicsPreset.FANCY),
+        FABULOUS(GraphicsPreset.FABULOUS),
+        ;
 
         companion object {
             @JvmStatic
-            fun fromMC(mcValue: MCGraphicsMode) = entries.first { it.mcValue == mcValue }
+            fun fromMC(mcValue: GraphicsPreset) = entries.first { it.mcValue == mcValue }
         }
     }
 }
